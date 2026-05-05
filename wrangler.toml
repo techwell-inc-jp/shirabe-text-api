@@ -1,0 +1,17 @@
+name = "shirabe-text-api"
+main = "src/index.ts"
+compatibility_date = "2026-05-05"
+compatibility_flags = ["nodejs_compat"]
+account_id = "e23b560b7a00ce93fb33faa6cc7bc244"
+
+# R2 binding for IPAdic dictionary (8 files, ~55 MB total uncompressed)
+[[r2_buckets]]
+binding = "DICT"
+bucket_name = "shirabe-text-dict"
+# PoC では production / preview とも同 bucket(read-only 利用、PoC 中は分離不要)
+preview_bucket_name = "shirabe-text-dict"
+
+# KV cache (optional Day 3 — wire up only after R2 fetch path verified)
+# [[kv_namespaces]]
+# binding = "DICT_CACHE"
+# id = "TBD"

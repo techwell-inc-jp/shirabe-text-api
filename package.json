@@ -1,0 +1,25 @@
+{
+  "name": "shirabe-text-api",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Shirabe Text API — Japanese morphological analysis on Cloudflare Workers (Lindera-wasm + R2 IPAdic)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/techwell-inc-jp/shirabe-text-api.git"
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --remote",
+    "deploy:dry": "wrangler deploy --dry-run --outdir=dist",
+    "size": "wrangler deploy --dry-run --outdir=dist && powershell -Command \"Get-ChildItem dist | Select-Object Name, Length | Format-Table -AutoSize\""
+  },
+  "dependencies": {
+    "lindera-wasm-bundler": "^3.0.7"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20251001.0",
+    "typescript": "^5.6.0",
+    "wrangler": "^4.87.0"
+  }
+}
