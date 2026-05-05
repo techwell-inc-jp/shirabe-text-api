@@ -4,14 +4,51 @@ compatibility_date = "2026-05-05"
 compatibility_flags = ["nodejs_compat"]
 account_id = "e23b560b7a00ce93fb33faa6cc7bc244"
 
-# R2 binding for IPAdic dictionary (8 files, ~55 MB total uncompressed)
+# Workers ルート(5/31 リリース時に経営者が Cloudflare Dashboard で routes を追加するか
+# 本セクションを有効化する)。Phase 2 開発中は workers.dev のみで動作。
+# [[routes]]
+# pattern = "shirabe.dev/api/v1/text/*"
+# zone_name = "shirabe.dev"
+# [[routes]]
+# pattern = "shirabe.dev/docs/text-*"
+# zone_name = "shirabe.dev"
+
+[vars]
+API_VERSION = "0.1.0-phase2"
+
+# Stripe Price ID(text API 用、5/13-5/24 で経営者が Stripe Dashboard で発行予定)
+# Meter: shirabe_text_api_requests(未発行、5/13-5/24 で発行予定)
+# STRIPE_PRICE_STARTER = "TBD"
+# STRIPE_PRICE_PRO = "TBD"
+# STRIPE_PRICE_ENTERPRISE = "TBD"
+# STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET は `wrangler secret put` で注入
+
+# R2 binding for IPAdic dictionary(8 ファイル / 55 MB、Day 3 PoC で活性化済)
 [[r2_buckets]]
 binding = "DICT"
 bucket_name = "shirabe-text-dict"
-# PoC では production / preview とも同 bucket(read-only 利用、PoC 中は分離不要)
 preview_bucket_name = "shirabe-text-dict"
 
-# KV cache (optional Day 3 — wire up only after R2 fetch path verified)
-# [[kv_namespaces]]
-# binding = "DICT_CACHE"
-# id = "TBD"
+# API_KEYS: **暦・住所 API と共有**(canonical: shirabe-calendar/wrangler.toml + 経営者判断 2026-04-22)。
+# 1 キー集約構造(`apis.text` フィールド)で同一 API キーで text API にもアクセス可能。
+[[kv_namespaces]]
+binding = "API_KEYS"
+id = "3b6bfff407974b7cbf79ded8e184c1a6"
+
+# RATE_LIMITS: text API 専用(秒次 + 月次カウンター)。
+# 5/7 までに `wrangler kv namespace create shirabe-text-api-rate-limits --remote` で作成 → ID 反映。
+[[kv_namespaces]]
+binding = "RATE_LIMITS"
+id = "TBD-RATE-LIMITS"
+
+# USAGE_LOGS: text API 専用(月間利用量カウント + リクエストログ)。
+# 5/7 までに `wrangler kv namespace create shirabe-text-api-usage-logs --remote` で作成 → ID 反映。
+[[kv_namespaces]]
+binding = "USAGE_LOGS"
+id = "TBD-USAGE-LOGS"
+
+# YAML ファイルをテキストモジュールとしてバンドルに取り込む(GET /openapi.yaml 用、5/24 まで)
+[[rules]]
+type = "Text"
+globs = ["**/*.yaml"]
+fallthrough = true
