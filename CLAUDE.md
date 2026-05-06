@@ -62,9 +62,14 @@ API_KEYS 共有の方針:
 
 ---
 
-## 5. 料金プラン(暫定、5/24 までに master-plan v1.05+ で確定)
+## 5. 料金プラン(Phase 1 stable、2026-05-06 経営判断確定、1+ 年変更なし)
 
-暦 API と同一構造で起動。価格は 5/24 までに再確認。
+暦・住所 API と完全同型。**1+ 年変更しない約束**(memory `feedback_no_implicit_plan_change.md`):
+
+- 上方調整のみ許可:Free 枠拡張、値下げ、新エンドポイント追加(unilateral good news)
+- 禁止調整:Free 縮小、値上げ、機能別差別単価導入(既存顧客の billing 動線破壊)
+- 4.3 倍 volume 想定(text 月 65 万 / calendar 月 15 万)= master-plan v1.04 baked-in
+- 詳細: `shirabe-assets/knowledge/text-api-pricing-research.md` §9 / §10
 
 | プラン | 月間上限 | 単価 | 月額例 | レート制限 |
 |---|---|---|---|---|
@@ -73,7 +78,7 @@ API_KEYS 共有の方針:
 | Pro | 5,000,000 回 | ¥0.03/回 | 500 万回: ¥150,000 | 100 req/s |
 | Enterprise | 無制限 | ¥0.01/回 | 1,000 万回: ¥100,000 | 500 req/s |
 
-`canonical = src/middleware/plan-pricing.ts` + master-plan(値が drift したら必ず docs を正にする、calendar 5/5 audit 教訓)。
+`canonical = src/middleware/plan-pricing.ts` + master-plan + `text-api-pricing-research.md` §9 / §10(値が drift したら必ず docs を正にする、calendar 5/5 audit 教訓)。
 
 ---
 

@@ -4,8 +4,16 @@
  * AI agent が 429 response から 1 hop で「次に upgrade すべきプラン名 / 料金 /
  * checkout URL」を取得できるようにする(C-1 paid 突破経路 ergonomics)。
  *
- * 価格は暦 API と同一構造(Free 10k / Starter 500k / Pro 5M / Enterprise 無制限)で
- * 暫定。確定値は 5/24 までに master-plan v1.05 で再確認(canonical = docs)。
+ * 価格は **Phase 1 stable**(暦・住所 API と完全同型、2026-05-06 経営判断確定):
+ * Free 10k / Starter 500k×¥0.05 / Pro 5M×¥0.03 / Enterprise 無制限×¥0.01
+ *
+ * 1+ 年変更しない約束(memory `feedback_no_implicit_plan_change.md`):
+ * - 課金モデル / 月間上限 / 単価 / billing schema は launch 時点で 1+ 年 stable
+ * - 上方調整のみ許可(Free 枠拡張、値下げ、新エンドポイント追加 = unilateral good news)
+ * - 禁止調整(Free 縮小、値上げ、機能別差別単価導入 = 既存顧客の billing 動線破壊)
+ * - 4.3 倍 volume 想定(text 月 65 万 / calendar 月 15 万)= master-plan v1.04 baked-in
+ *
+ * canonical = `shirabe-assets/knowledge/text-api-pricing-research.md` §9 / §10
  */
 
 export type PlanName = "free" | "starter" | "pro" | "enterprise";
