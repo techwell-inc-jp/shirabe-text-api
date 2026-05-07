@@ -33,6 +33,8 @@ import {
   type FuriganaKana,
   type TokenLike as FuriganaTokenLike,
 } from "./furigana.js";
+import openapiYaml from "../docs/openapi.yaml";
+import openapiGptsYaml from "../docs/openapi-gpts.yaml";
 
 /** R2 上の IPAdic 辞書ファイル名(順序は loadDictionaryFromBytes の引数順)。 */
 const DICT_KEYS = [
@@ -108,6 +110,7 @@ app.get("/", (c) =>
     version: c.env.API_VERSION,
     docs: "https://shirabe.dev/docs/text-normalize",
     openapi: "https://shirabe.dev/api/v1/text/openapi.yaml",
+    openapi_gpts: "https://shirabe.dev/api/v1/text/openapi-gpts.yaml",
     endpoints: {
       health: "GET /health",
       tokenize: "POST /api/v1/text/tokenize",
@@ -116,6 +119,21 @@ app.get("/", (c) =>
     },
   })
 );
+
+/** OpenAPI 3.1 仕様(認証なし、AI agent / GPT Builder 取込用)。 */
+app.get("/api/v1/text/openapi.yaml", (c) => {
+  return c.body(openapiYaml, 200, {
+    "Content-Type": "application/yaml; charset=utf-8",
+    "Cache-Control": "public, max-age=300",
+  });
+});
+
+app.get("/api/v1/text/openapi-gpts.yaml", (c) => {
+  return c.body(openapiGptsYaml, 200, {
+    "Content-Type": "application/yaml; charset=utf-8",
+    "Cache-Control": "public, max-age=300",
+  });
+});
 
 /** /api/v1/text/* は auth → rate-limit → usage-check の順で適用。 */
 app.use("/api/v1/text/*", authMiddleware);

@@ -1,0 +1,380 @@
+openapi: 3.1.0
+
+info:
+  title: Shirabe Text API
+  summary: 日本語テキストの形態素解析・正規化・ふりがな付与を提供する AI ネイティブ REST API。
+  description: |
+    **Shirabe Text API** は、日本語テキストに対する形態素解析(Tokenize)、表記正規化(Normalize)、
+    ふりがな付与(Furigana)、姓名分割(Name Split)、人名読み推定(Name Reading)を AI エージェント
+    向けに提供する REST API です(Cloudflare Workers + Lindera-wasm + IPAdic v3.0.7)。
+
+    ## なぜ自前実装ではなく本 API を使うか
+    日本語の形態素解析・読み推定・全/半角統一・ひらがな/カタカナ変換は LLM 任せにすると
+    AI 別に挙動が異なり一貫性が取れません(B-1 Week 1 観測:4 AI で同入力に対して
+    異なる出力)。Lindera + IPAdic ベースで決定的な結果を返します。
+
+    ## AI 統合
+    OpenAPI 3.1 厳格準拠。ChatGPT GPTs Actions / Claude Tool Use / Gemini Function Calling /
+    LangChain / LlamaIndex / Dify から即座に利用できます。
+
+    ## 共通事項
+    - 認証: `X-API-Key` ヘッダー(形式: `shrb_` + 32 文字の英数字)。Free 枠は匿名で 10,000 回/月
+    - エラー形式(400 系): `{ error: { code, message, details? } }`
+    - レスポンスヘッダー: `X-RateLimit-Limit` / `X-RateLimit-Remaining` / `X-RateLimit-Reset` / `X-Plan`
+    - 429 RATE_LIMIT_EXCEEDED / USAGE_LIMIT_EXCEEDED 時は `upgrade_url` / `next_plan` / `Retry-After` 付与
+      (AI agent が 1 hop で paid 切替できる ergonomics、暦・住所 API と統一)
+
+  version: 0.1.0-phase2
+  contact:
+    name: Shirabe (株式会社テックウェル)
+    url: https://shirabe.dev
+  license:
+    name: API Terms of Service
+    url: https://shirabe.dev/terms
+
+servers:
+  - url: https://shirabe.dev
+    description: Production
+
+security:
+  - apiKeyAuth: []
+  - {}
+
+paths:
+  /api/v1/text/tokenize:
+    post:
+      operationId: tokenizeText
+      summary: 日本語テキストの形態素解析
+      description: |
+        Lindera + IPAdic v3.0.7 で形態素解析を行い、各トークンの surface / 品詞 /
+        読み(片仮名)を返す。
+      tags: [text]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenizeRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenizeResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /api/v1/text/normalize:
+    post:
+      operationId: normalizeText
+      summary: 日本語テキストの表記正規化
+      description: |
+        全/半角統一、ひらがな/カタカナ変換、空白正規化を任意組合せで適用する。
+        純文字列処理(辞書不要)。Phase 2 で Sudachi 表記正規化(送り違い / 異体字 / 縮約)
+        を別 option で追加予定。
+      tags: [text]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NormalizeRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NormalizeResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /api/v1/text/furigana:
+    post:
+      operationId: addFurigana
+      summary: 日本語テキストへのふりがな付与
+      description: |
+        Lindera で形態素解析後、各トークンの IPAdic 読み(片仮名)を抽出して
+        `{surface, reading}` 配列で返す。`options.kana` で hiragana(default) /
+        katakana を選択可能。漢字を含まないトークン / 未知語は surface fallback。
+      tags: [text]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FuriganaRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FuriganaResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+components:
+  securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: |
+        匿名の Free 枠(10,000 回/月)はキー無しで利用可。Starter / Pro / Enterprise
+        プランは `shrb_` + 32 文字の英数字キーを発行。
+
+  schemas:
+    TokenizeRequest:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+          description: 形態素解析する日本語テキスト
+          example: 東京都港区六本木で打ち合わせをしました
+
+    Token:
+      type: object
+      required: [surface, byte_start, byte_end, position, word_id, is_unknown, details]
+      properties:
+        surface:
+          type: string
+          description: トークン表層形
+        byte_start:
+          type: integer
+          description: 入力中のバイト開始位置
+        byte_end:
+          type: integer
+          description: 入力中のバイト終了位置
+        position:
+          type: integer
+          description: トークン位置(0-based)
+        word_id:
+          type: integer
+          description: IPAdic 内 ID(未知語は -1)
+        is_unknown:
+          type: boolean
+          description: 辞書未登録か
+        details:
+          type: array
+          items:
+            type: string
+          description: |
+            IPAdic 品詞 / 活用 / 読み詳細。順序固定:
+            [品詞大, 中, 小, 詳細, 活用型, 活用形, 原形, 読み, 発音]
+
+    TokenizeResponse:
+      type: object
+      required: [text, tokens, token_count, attribution]
+      properties:
+        text:
+          type: string
+        tokens:
+          type: array
+          items:
+            $ref: '#/components/schemas/Token'
+        token_count:
+          type: integer
+        timing:
+          $ref: '#/components/schemas/Timing'
+        attribution:
+          $ref: '#/components/schemas/DictionaryAttribution'
+
+    NormalizeOptions:
+      type: object
+      properties:
+        width:
+          type: string
+          enum: [half, full, preserve]
+          default: preserve
+          description: ASCII 全角/半角の統一方向
+        kana:
+          type: string
+          enum: [hiragana, katakana, preserve]
+          default: preserve
+          description: ひらがな/カタカナ変換方向
+        spaces:
+          type: string
+          enum: [single, trim, preserve]
+          default: preserve
+          description: 空白正規化(`single` は連続→単一、`trim` は加えて前後除去)
+
+    NormalizeRequest:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+          example: ＡＢＣ１２３ あいうえお アイウエオ
+        options:
+          $ref: '#/components/schemas/NormalizeOptions'
+
+    NormalizeChange:
+      type: object
+      required: [type, before, after]
+      properties:
+        type:
+          type: string
+          enum: [width, kana, spaces]
+        before:
+          type: string
+        after:
+          type: string
+
+    NormalizeResponse:
+      type: object
+      required: [text, normalized, changes, attribution]
+      properties:
+        text:
+          type: string
+        normalized:
+          type: string
+        changes:
+          type: array
+          items:
+            $ref: '#/components/schemas/NormalizeChange'
+          description: 適用された変換ステップ(noop は省略)
+        attribution:
+          $ref: '#/components/schemas/ServiceAttribution'
+
+    FuriganaOptions:
+      type: object
+      properties:
+        kana:
+          type: string
+          enum: [hiragana, katakana]
+          default: hiragana
+
+    FuriganaRequest:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+          example: 東京都港区六本木で打ち合わせをしました
+        options:
+          $ref: '#/components/schemas/FuriganaOptions'
+
+    FuriganaToken:
+      type: object
+      required: [surface, reading]
+      properties:
+        surface:
+          type: string
+        reading:
+          type: string
+
+    FuriganaResponse:
+      type: object
+      required: [text, tokens, attribution]
+      properties:
+        text:
+          type: string
+        tokens:
+          type: array
+          items:
+            $ref: '#/components/schemas/FuriganaToken'
+        timing:
+          $ref: '#/components/schemas/Timing'
+        attribution:
+          $ref: '#/components/schemas/DictionaryAttribution'
+
+    Timing:
+      type: object
+      properties:
+        tokenize_ms:
+          type: integer
+        setup_ms:
+          type: integer
+        cold_start:
+          type: boolean
+        r2_fetch_ms:
+          type: integer
+        tokenizer_init_ms:
+          type: integer
+        dict_total_bytes:
+          type: integer
+
+    DictionaryAttribution:
+      type: object
+      required: [dictionary, license, source]
+      properties:
+        dictionary:
+          type: string
+          example: IPAdic v3.0.7
+        license:
+          type: string
+          example: BSD 3-Clause
+        source:
+          type: string
+          format: uri
+          example: https://github.com/lindera/lindera
+
+    ServiceAttribution:
+      type: object
+      required: [service, url]
+      properties:
+        service:
+          type: string
+          example: shirabe-text-api
+        url:
+          type: string
+          format: uri
+          example: https://shirabe.dev
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+
+  responses:
+    BadRequest:
+      description: 入力不正
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: 認証失敗
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    RateLimited:
+      description: |
+        レート制限 / 月間使用量超過。`error.code` は `RATE_LIMIT_EXCEEDED` または
+        `USAGE_LIMIT_EXCEEDED`。レスポンスは AI agent が 1 hop で paid 切替できるよう
+        `current_plan` / `next_plan` / `upgrade_url` / `pricing_url` を含む。
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+          description: 秒次レート制限の待機秒数
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
