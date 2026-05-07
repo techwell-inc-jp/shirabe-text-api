@@ -21,6 +21,13 @@ import type { AppEnv, Env } from "./types/env.js";
 import { authMiddleware } from "./middleware/auth.js";
 import { rateLimitMiddleware } from "./middleware/rate-limit.js";
 import { usageCheckMiddleware } from "./middleware/usage-check.js";
+import {
+  normalizeText,
+  type NormalizeOptions,
+  type WidthMode,
+  type KanaMode,
+  type SpacesMode,
+} from "./normalize.js";
 
 /** R2 上の IPAdic 辞書ファイル名(順序は loadDictionaryFromBytes の引数順)。 */
 const DICT_KEYS = [
@@ -99,6 +106,7 @@ app.get("/", (c) =>
     endpoints: {
       health: "GET /health",
       tokenize: "POST /api/v1/text/tokenize",
+      normalize: "POST /api/v1/text/normalize",
     },
   })
 );
@@ -197,6 +205,117 @@ app.post("/api/v1/text/tokenize", async (c) => {
       500
     );
   }
+});
+
+/**
+ * POST /api/v1/text/normalize
+ *
+ * Request body: { text: string, options?: { width?, kana?, spaces? } }
+ * Response: { text, normalized, changes[], attribution }
+ *
+ * Pure 文字列変換のみ(Lindera 不要)。Sudachi 表記正規化は Phase 2(別 endpoint or option 追加)。
+ */
+const VALID_WIDTH: readonly WidthMode[] = ["half", "full", "preserve"];
+const VALID_KANA: readonly KanaMode[] = ["hiragana", "katakana", "preserve"];
+const VALID_SPACES: readonly SpacesMode[] = ["single", "trim", "preserve"];
+
+app.post("/api/v1/text/normalize", async (c) => {
+  let body: { text?: unknown; options?: unknown };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json(
+      {
+        error: {
+          code: "INVALID_REQUEST_BODY",
+          message: "Request body must be valid JSON.",
+        },
+      },
+      400
+    );
+  }
+
+  const text = body.text;
+  if (typeof text !== "string") {
+    return c.json(
+      {
+        error: {
+          code: "MISSING_TEXT",
+          message: 'Request body must include "text": string.',
+        },
+      },
+      400
+    );
+  }
+
+  const rawOptions = (body.options ?? {}) as Record<string, unknown>;
+  if (typeof rawOptions !== "object" || rawOptions === null || Array.isArray(rawOptions)) {
+    return c.json(
+      {
+        error: {
+          code: "INVALID_OPTIONS",
+          message: '"options" must be an object.',
+        },
+      },
+      400
+    );
+  }
+
+  const options: NormalizeOptions = {};
+  if (rawOptions.width !== undefined) {
+    if (!VALID_WIDTH.includes(rawOptions.width as WidthMode)) {
+      return c.json(
+        {
+          error: {
+            code: "INVALID_OPTIONS",
+            message: `"options.width" must be one of: ${VALID_WIDTH.join(", ")}.`,
+          },
+        },
+        400
+      );
+    }
+    options.width = rawOptions.width as WidthMode;
+  }
+  if (rawOptions.kana !== undefined) {
+    if (!VALID_KANA.includes(rawOptions.kana as KanaMode)) {
+      return c.json(
+        {
+          error: {
+            code: "INVALID_OPTIONS",
+            message: `"options.kana" must be one of: ${VALID_KANA.join(", ")}.`,
+          },
+        },
+        400
+      );
+    }
+    options.kana = rawOptions.kana as KanaMode;
+  }
+  if (rawOptions.spaces !== undefined) {
+    if (!VALID_SPACES.includes(rawOptions.spaces as SpacesMode)) {
+      return c.json(
+        {
+          error: {
+            code: "INVALID_OPTIONS",
+            message: `"options.spaces" must be one of: ${VALID_SPACES.join(", ")}.`,
+          },
+        },
+        400
+      );
+    }
+    options.spaces = rawOptions.spaces as SpacesMode;
+  }
+
+  const { normalized, changes } = normalizeText(text, options);
+
+  return c.json({
+    text,
+    normalized,
+    changes,
+    attribution: {
+      service: "shirabe-text-api",
+      url: "https://shirabe.dev",
+    },
+  });
 });
 
 export default app;
