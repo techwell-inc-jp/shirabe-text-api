@@ -1,0 +1,237 @@
+openapi: 3.1.0
+
+# ---------------------------------------------------------------------------
+# Shirabe Text API — GPTs Actions 用短縮版 OpenAPI 仕様
+#
+# 用途: ChatGPT GPT Builder → Actions → Import からの貼り付け/Import URL。
+# 本家 https://shirabe.dev/api/v1/text/openapi.yaml は description 詳細版で、
+# GPT Builder UI の description 長(約300字)制限に抵触する場合があるため、
+# 各 operation.description を 300 字以下に短縮した版。
+# operationId / parameters / response schema は本家と同一。
+# ---------------------------------------------------------------------------
+
+info:
+  title: Shirabe Text API
+  summary: 日本語テキストの形態素解析・正規化・ふりがな付与を提供する REST API。
+  description: |
+    Japanese text-processing API: morphological analysis (Lindera + IPAdic), text normalization (fullwidth/halfwidth, hiragana/katakana, whitespace), and furigana (reading) annotation. Free tier: 10,000 anonymous calls/month. Full spec: https://shirabe.dev/api/v1/text/openapi.yaml
+  version: "0.1.0-phase2"
+  termsOfService: https://shirabe.dev/terms
+  contact:
+    name: Shirabe (Techwell Inc., Fukuoka, Japan)
+    url: https://shirabe.dev
+
+servers:
+  - url: https://shirabe.dev
+
+security:
+  - apiKeyAuth: []
+  - {}
+
+paths:
+  /api/v1/text/tokenize:
+    post:
+      operationId: tokenizeText
+      summary: 日本語テキストの形態素解析
+      description: |
+        Tokenize Japanese text via Lindera + IPAdic v3.0.7. Returns surface, POS tags, and reading (katakana) for each token.
+      tags: [text]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenizeRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenizeResponse'
+
+  /api/v1/text/normalize:
+    post:
+      operationId: normalizeText
+      summary: 日本語テキストの表記正規化
+      description: |
+        Normalize Japanese text: ASCII fullwidth↔halfwidth, hiragana↔katakana, whitespace collapse/trim. Pure string transform (no dictionary). Options selected via `options` object.
+      tags: [text]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NormalizeRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NormalizeResponse'
+
+  /api/v1/text/furigana:
+    post:
+      operationId: addFurigana
+      summary: 日本語テキストへのふりがな付与
+      description: |
+        Add furigana (reading) to Japanese text. Each token returns {surface, reading}. Default kana is hiragana; set options.kana="katakana" to keep katakana.
+      tags: [text]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FuriganaRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FuriganaResponse'
+
+components:
+  securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  schemas:
+    TokenizeRequest:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+          example: 東京都港区六本木で打ち合わせをしました
+
+    Token:
+      type: object
+      required: [surface, byte_start, byte_end, position, word_id, is_unknown, details]
+      properties:
+        surface: { type: string }
+        byte_start: { type: integer }
+        byte_end: { type: integer }
+        position: { type: integer }
+        word_id: { type: integer }
+        is_unknown: { type: boolean }
+        details:
+          type: array
+          items: { type: string }
+
+    TokenizeResponse:
+      type: object
+      required: [text, tokens, token_count, attribution]
+      properties:
+        text: { type: string }
+        tokens:
+          type: array
+          items:
+            $ref: '#/components/schemas/Token'
+        token_count: { type: integer }
+        attribution:
+          $ref: '#/components/schemas/DictionaryAttribution'
+
+    NormalizeOptions:
+      type: object
+      properties:
+        width:
+          type: string
+          enum: [half, full, preserve]
+          default: preserve
+        kana:
+          type: string
+          enum: [hiragana, katakana, preserve]
+          default: preserve
+        spaces:
+          type: string
+          enum: [single, trim, preserve]
+          default: preserve
+
+    NormalizeRequest:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+          example: ＡＢＣ１２３ あいうえお アイウエオ
+        options:
+          $ref: '#/components/schemas/NormalizeOptions'
+
+    NormalizeChange:
+      type: object
+      required: [type, before, after]
+      properties:
+        type:
+          type: string
+          enum: [width, kana, spaces]
+        before: { type: string }
+        after: { type: string }
+
+    NormalizeResponse:
+      type: object
+      required: [text, normalized, changes, attribution]
+      properties:
+        text: { type: string }
+        normalized: { type: string }
+        changes:
+          type: array
+          items:
+            $ref: '#/components/schemas/NormalizeChange'
+        attribution:
+          $ref: '#/components/schemas/ServiceAttribution'
+
+    FuriganaOptions:
+      type: object
+      properties:
+        kana:
+          type: string
+          enum: [hiragana, katakana]
+          default: hiragana
+
+    FuriganaRequest:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+          example: 東京都港区六本木で打ち合わせをしました
+        options:
+          $ref: '#/components/schemas/FuriganaOptions'
+
+    FuriganaToken:
+      type: object
+      required: [surface, reading]
+      properties:
+        surface: { type: string }
+        reading: { type: string }
+
+    FuriganaResponse:
+      type: object
+      required: [text, tokens, attribution]
+      properties:
+        text: { type: string }
+        tokens:
+          type: array
+          items:
+            $ref: '#/components/schemas/FuriganaToken'
+        attribution:
+          $ref: '#/components/schemas/DictionaryAttribution'
+
+    DictionaryAttribution:
+      type: object
+      required: [dictionary, license, source]
+      properties:
+        dictionary: { type: string, example: IPAdic v3.0.7 }
+        license: { type: string, example: BSD 3-Clause }
+        source: { type: string, format: uri, example: 'https://github.com/lindera/lindera' }
+
+    ServiceAttribution:
+      type: object
+      required: [service, url]
+      properties:
+        service: { type: string, example: shirabe-text-api }
+        url: { type: string, format: uri, example: 'https://shirabe.dev' }
