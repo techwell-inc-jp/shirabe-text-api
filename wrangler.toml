@@ -36,16 +36,14 @@ binding = "API_KEYS"
 id = "3b6bfff407974b7cbf79ded8e184c1a6"
 
 # RATE_LIMITS: text API 専用(秒次 + 月次カウンター)。
-# 5/7 までに `wrangler kv namespace create shirabe-text-api-rate-limits --remote` で作成 → ID 反映。
 [[kv_namespaces]]
 binding = "RATE_LIMITS"
-id = "TBD-RATE-LIMITS"
+id = "18c0bd1723604b01b2a0c7992427da53"
 
 # USAGE_LOGS: text API 専用(月間利用量カウント + リクエストログ)。
-# 5/7 までに `wrangler kv namespace create shirabe-text-api-usage-logs --remote` で作成 → ID 反映。
 [[kv_namespaces]]
 binding = "USAGE_LOGS"
-id = "TBD-USAGE-LOGS"
+id = "6f1ad57596ec4ed5badffbe3773ffc14"
 
 # YAML ファイルをテキストモジュールとしてバンドルに取り込む(GET /openapi.yaml 用、5/24 まで)
 [[rules]]
