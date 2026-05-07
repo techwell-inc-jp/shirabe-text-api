@@ -90,7 +90,7 @@ function toKatakana(s: string): string {
   return out;
 }
 
-function toHiragana(s: string): string {
+export function toHiragana(s: string): string {
   let out = "";
   for (const ch of s) {
     const code = ch.codePointAt(0)!;

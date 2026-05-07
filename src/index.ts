@@ -28,6 +28,11 @@ import {
   type KanaMode,
   type SpacesMode,
 } from "./normalize.js";
+import {
+  tokensToFurigana,
+  type FuriganaKana,
+  type TokenLike as FuriganaTokenLike,
+} from "./furigana.js";
 
 /** R2 上の IPAdic 辞書ファイル名(順序は loadDictionaryFromBytes の引数順)。 */
 const DICT_KEYS = [
@@ -107,6 +112,7 @@ app.get("/", (c) =>
       health: "GET /health",
       tokenize: "POST /api/v1/text/tokenize",
       normalize: "POST /api/v1/text/normalize",
+      furigana: "POST /api/v1/text/furigana",
     },
   })
 );
@@ -316,6 +322,113 @@ app.post("/api/v1/text/normalize", async (c) => {
       url: "https://shirabe.dev",
     },
   });
+});
+
+/**
+ * POST /api/v1/text/furigana
+ *
+ * Request body: { text: string, options?: { kana?: "hiragana" | "katakana" } }
+ * Response: { text, tokens: [{surface, reading}], attribution }
+ *
+ * Lindera で形態素解析 → 各トークンの IPAdic details[7](読み)を抽出。
+ * default kana = "hiragana"。漢字を含まないトークンや未知語は surface fallback。
+ */
+const VALID_FURIGANA_KANA: readonly FuriganaKana[] = ["hiragana", "katakana"];
+
+app.post("/api/v1/text/furigana", async (c) => {
+  let body: { text?: unknown; options?: unknown };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json(
+      {
+        error: {
+          code: "INVALID_REQUEST_BODY",
+          message: "Request body must be valid JSON.",
+        },
+      },
+      400
+    );
+  }
+
+  const text = body.text;
+  if (typeof text !== "string") {
+    return c.json(
+      {
+        error: {
+          code: "MISSING_TEXT",
+          message: 'Request body must include "text": string.',
+        },
+      },
+      400
+    );
+  }
+
+  const rawOptions = (body.options ?? {}) as Record<string, unknown>;
+  if (typeof rawOptions !== "object" || rawOptions === null || Array.isArray(rawOptions)) {
+    return c.json(
+      {
+        error: {
+          code: "INVALID_OPTIONS",
+          message: '"options" must be an object.',
+        },
+      },
+      400
+    );
+  }
+
+  let kanaMode: FuriganaKana = "hiragana";
+  if (rawOptions.kana !== undefined) {
+    if (!VALID_FURIGANA_KANA.includes(rawOptions.kana as FuriganaKana)) {
+      return c.json(
+        {
+          error: {
+            code: "INVALID_OPTIONS",
+            message: `"options.kana" must be one of: ${VALID_FURIGANA_KANA.join(", ")}.`,
+          },
+        },
+        400
+      );
+    }
+    kanaMode = rawOptions.kana as FuriganaKana;
+  }
+
+  try {
+    const t0 = Date.now();
+    const { tokenizer, initMs, fetchMs, totalBytes } = await getTokenizer(c.env);
+    const setupMs = Date.now() - t0;
+
+    const tokenizeStart = Date.now();
+    const tokens = tokenizer.tokenize(text) as FuriganaTokenLike[];
+    const tokenizeMs = Date.now() - tokenizeStart;
+
+    const furigana = tokensToFurigana(tokens, kanaMode);
+
+    return c.json({
+      text,
+      tokens: furigana,
+      timing: {
+        tokenize_ms: tokenizeMs,
+        setup_ms: setupMs,
+        cold_start: setupMs > 100,
+        r2_fetch_ms: fetchMs,
+        tokenizer_init_ms: initMs,
+        dict_total_bytes: totalBytes,
+      },
+      attribution: {
+        dictionary: "IPAdic v3.0.7",
+        license: "BSD 3-Clause",
+        source: "https://github.com/lindera/lindera",
+      },
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error(`[shirabe-text-api] furigana error:`, msg);
+    return c.json(
+      { error: { code: "FURIGANA_ERROR", message: msg } },
+      500
+    );
+  }
 });
 
 export default app;
