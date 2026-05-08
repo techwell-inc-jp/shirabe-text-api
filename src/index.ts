@@ -49,6 +49,12 @@ import {
 } from "./sudachi-normalize.js";
 import openapiYaml from "../docs/openapi.yaml";
 import openapiGptsYaml from "../docs/openapi-gpts.yaml";
+import { renderTextTokenizeDocPage } from "./pages/docs-text-tokenize.js";
+import { renderTextNormalizeDocPage } from "./pages/docs-text-normalize.js";
+import { renderTextFuriganaDocPage } from "./pages/docs-text-furigana.js";
+import { renderTextNameSplitDocPage } from "./pages/docs-text-name-split.js";
+import { renderTextNameReadingDocPage } from "./pages/docs-text-name-reading.js";
+import { renderTextPricingDocPage } from "./pages/docs-text-pricing.js";
 
 /** R2 上の IPAdic 辞書ファイル名(順序は loadDictionaryFromBytes の引数順)。 */
 const DICT_KEYS = [
@@ -187,6 +193,34 @@ app.get("/api/v1/text/openapi-gpts.yaml", (c) => {
     "Cache-Control": "public, max-age=300",
   });
 });
+
+/**
+ * B-1 SEO 静的ページ群(認証なし、AI クローラー / 検索向け、5/31 リリース時に活性化)。
+ *
+ * shirabe.dev/docs/text-* pattern は wrangler.toml routes(コメントアウト中)で
+ * shirabe-text-api Worker へルーティング。Cache-Control max-age=3600 で AI クローラー
+ * からの重複 fetch を抑制。
+ */
+const DOCS_CACHE = "public, max-age=3600";
+
+app.get("/docs/text-tokenize", (c) =>
+  c.html(renderTextTokenizeDocPage(), 200, { "Cache-Control": DOCS_CACHE })
+);
+app.get("/docs/text-normalize", (c) =>
+  c.html(renderTextNormalizeDocPage(), 200, { "Cache-Control": DOCS_CACHE })
+);
+app.get("/docs/text-furigana", (c) =>
+  c.html(renderTextFuriganaDocPage(), 200, { "Cache-Control": DOCS_CACHE })
+);
+app.get("/docs/text-name-split", (c) =>
+  c.html(renderTextNameSplitDocPage(), 200, { "Cache-Control": DOCS_CACHE })
+);
+app.get("/docs/text-name-reading", (c) =>
+  c.html(renderTextNameReadingDocPage(), 200, { "Cache-Control": DOCS_CACHE })
+);
+app.get("/docs/text-pricing", (c) =>
+  c.html(renderTextPricingDocPage(), 200, { "Cache-Control": DOCS_CACHE })
+);
 
 /** /api/v1/text/* は auth → rate-limit → usage-check の順で適用。 */
 app.use("/api/v1/text/*", authMiddleware);
