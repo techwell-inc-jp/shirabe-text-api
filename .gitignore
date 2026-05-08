@@ -27,3 +27,6 @@ Thumbs.db
 
 # Test coverage
 coverage/
+
+# Generated data (Phase 3 normalize map; built from SudachiDict CSV by scripts/build-normalize-map.mjs, uploaded to R2)
+scripts/data/

@@ -17,16 +17,19 @@ export type WidthMode = "half" | "full" | "preserve";
 export type KanaMode = "hiragana" | "katakana" | "preserve";
 export type SpacesMode = "single" | "trim" | "preserve";
 export type HalfwidthKanaMode = "expand" | "preserve";
+/** Phase 3: SudachiDict normalized_form 適用(Lindera tokenize 必要)。 */
+export type SudachiMode = "apply" | "preserve";
 
 export interface NormalizeOptions {
   width?: WidthMode;
   kana?: KanaMode;
   spaces?: SpacesMode;
   halfwidth_kana?: HalfwidthKanaMode;
+  sudachi?: SudachiMode;
 }
 
 export interface NormalizeChange {
-  type: "width" | "kana" | "spaces" | "halfwidth_kana";
+  type: "width" | "kana" | "spaces" | "halfwidth_kana" | "sudachi";
   before: string;
   after: string;
 }

@@ -28,6 +28,7 @@ import {
   type WidthMode,
   type KanaMode,
   type SpacesMode,
+  type SudachiMode,
 } from "./normalize.js";
 import {
   tokensToFurigana,
@@ -42,6 +43,10 @@ import {
   readName,
   type TokenLike as NameReadingTokenLike,
 } from "./name-reading.js";
+import {
+  sudachiNormalize,
+  type SudachiTokenLike,
+} from "./sudachi-normalize.js";
 import openapiYaml from "../docs/openapi.yaml";
 import openapiGptsYaml from "../docs/openapi-gpts.yaml";
 
@@ -103,6 +108,43 @@ async function getTokenizer(env: Env) {
   })();
 
   return tokenizerPromise;
+}
+
+/**
+ * SudachiDict normalized_form lookup map(Phase 3 Sudachi 正規化)。
+ * R2 上 `normalize-map.json` を cold start に 1 回 fetch + parse、以降同 isolate で再利用。
+ *
+ * map size: ~1.2 MB(small_lex source、93,700 entries)。R2 fetch ~50-100ms + parse ~10-30ms。
+ */
+const NORMALIZE_MAP_KEY = "normalize-map.json";
+
+let normalizeMapPromise: Promise<{
+  map: Readonly<Record<string, string>>;
+  fetchMs: number;
+  parseMs: number;
+  entryCount: number;
+}> | null = null;
+
+async function getNormalizeMap(env: Env) {
+  if (normalizeMapPromise) return normalizeMapPromise;
+
+  normalizeMapPromise = (async () => {
+    const t0 = Date.now();
+    const obj = await env.DICT.get(NORMALIZE_MAP_KEY);
+    if (!obj) {
+      throw new Error(`R2 object not found: ${NORMALIZE_MAP_KEY}`);
+    }
+    const text = await obj.text();
+    const fetchMs = Date.now() - t0;
+
+    const t1 = Date.now();
+    const map = JSON.parse(text) as Record<string, string>;
+    const parseMs = Date.now() - t1;
+
+    return { map, fetchMs, parseMs, entryCount: Object.keys(map).length };
+  })();
+
+  return normalizeMapPromise;
 }
 
 const app = new Hono<AppEnv>();
@@ -245,15 +287,19 @@ app.post("/api/v1/text/tokenize", async (c) => {
 /**
  * POST /api/v1/text/normalize
  *
- * Request body: { text: string, options?: { width?, kana?, spaces?, halfwidth_kana? } }
- * Response: { text, normalized, changes[], attribution }
+ * Request body: { text: string, options?: { width?, kana?, spaces?, halfwidth_kana?, sudachi? } }
+ * Response: { text, normalized, changes[], attribution, timing? }
  *
- * Pure 文字列変換のみ(Lindera 不要)。Sudachi 表記正規化は Phase 3(別 endpoint or option 追加)。
+ * Phase 1+2 (width / kana / spaces / halfwidth_kana) は pure 文字列変換、Lindera 不要。
+ * Phase 3 (sudachi="apply") は Lindera tokenize + SudachiDict normalized_form lookup を適用、
+ * cold start で R2 から normalize map を取得(~1.2 MB JSON)。
+ * 適用順は Phase 1+2 → Phase 3(tokenizer は Phase 1+2 後の文字列に対して実行、精度向上)。
  */
 const VALID_WIDTH: readonly WidthMode[] = ["half", "full", "preserve"];
 const VALID_KANA: readonly KanaMode[] = ["hiragana", "katakana", "preserve"];
 const VALID_SPACES: readonly SpacesMode[] = ["single", "trim", "preserve"];
 const VALID_HALFWIDTH_KANA: readonly HalfwidthKanaMode[] = ["expand", "preserve"];
+const VALID_SUDACHI: readonly SudachiMode[] = ["apply", "preserve"];
 
 app.post("/api/v1/text/normalize", async (c) => {
   let body: { text?: unknown; options?: unknown };
@@ -354,17 +400,92 @@ app.post("/api/v1/text/normalize", async (c) => {
     }
     options.halfwidth_kana = rawOptions.halfwidth_kana as HalfwidthKanaMode;
   }
+  if (rawOptions.sudachi !== undefined) {
+    if (!VALID_SUDACHI.includes(rawOptions.sudachi as SudachiMode)) {
+      return c.json(
+        {
+          error: {
+            code: "INVALID_OPTIONS",
+            message: `"options.sudachi" must be one of: ${VALID_SUDACHI.join(", ")}.`,
+          },
+        },
+        400
+      );
+    }
+    options.sudachi = rawOptions.sudachi as SudachiMode;
+  }
 
-  const { normalized, changes } = normalizeText(text, options);
+  const phase12 = normalizeText(text, options);
+  let normalized = phase12.normalized;
+  const changes = [...phase12.changes];
+
+  // Phase 3: Sudachi 正規化(option 指定時のみ Lindera + map を起動)
+  let phase3Timing: {
+    setup_ms: number;
+    cold_start: boolean;
+    tokenize_ms: number;
+    sudachi_lookup_ms: number;
+    map_fetch_ms: number;
+    map_parse_ms: number;
+    map_entries: number;
+  } | undefined;
+  if (options.sudachi === "apply") {
+    try {
+      const t0 = Date.now();
+      const [tokenizerCtx, mapCtx] = await Promise.all([
+        getTokenizer(c.env),
+        getNormalizeMap(c.env),
+      ]);
+      const setupMs = Date.now() - t0;
+
+      const tokenizeStart = Date.now();
+      const tokens = tokenizerCtx.tokenizer.tokenize(normalized) as SudachiTokenLike[];
+      const tokenizeMs = Date.now() - tokenizeStart;
+
+      const lookupStart = Date.now();
+      const phase3 = sudachiNormalize(tokens, mapCtx.map);
+      const lookupMs = Date.now() - lookupStart;
+
+      normalized = phase3.normalized;
+      changes.push(...phase3.changes);
+
+      phase3Timing = {
+        setup_ms: setupMs,
+        cold_start: setupMs > 100,
+        tokenize_ms: tokenizeMs,
+        sudachi_lookup_ms: lookupMs,
+        map_fetch_ms: mapCtx.fetchMs,
+        map_parse_ms: mapCtx.parseMs,
+        map_entries: mapCtx.entryCount,
+      };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`[shirabe-text-api] sudachi normalize error:`, msg);
+      return c.json(
+        { error: { code: "SUDACHI_NORMALIZE_ERROR", message: msg } },
+        500
+      );
+    }
+  }
+
+  const includeSudachiAttribution = options.sudachi === "apply";
 
   return c.json({
     text,
     normalized,
     changes,
-    attribution: {
-      service: "shirabe-text-api",
-      url: "https://shirabe.dev",
-    },
+    ...(phase3Timing !== undefined && { timing: phase3Timing }),
+    attribution: includeSudachiAttribution
+      ? {
+          service: "shirabe-text-api",
+          url: "https://shirabe.dev",
+          dictionary: "SudachiDict-small",
+          dictionary_license: "Apache-2.0",
+          dictionary_source: "https://github.com/WorksApplications/SudachiDict",
+          tokenizer: "Lindera + IPAdic v3.0.7",
+          tokenizer_license: "MIT (Lindera) / BSD 3-Clause (IPAdic)",
+        }
+      : { service: "shirabe-text-api", url: "https://shirabe.dev" },
   });
 });
 
