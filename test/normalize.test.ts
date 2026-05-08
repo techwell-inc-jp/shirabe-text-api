@@ -86,6 +86,79 @@ describe("normalizeText", () => {
     });
   });
 
+  describe("halfwidth_kana", () => {
+    it("expand: 半角カナ → 全角カタカナ(基本マッピング)", () => {
+      const r = normalizeText("ｱｲｳｴｵ", { halfwidth_kana: "expand" });
+      expect(r.normalized).toBe("アイウエオ");
+      expect(r.changes).toHaveLength(1);
+      expect(r.changes[0]?.type).toBe("halfwidth_kana");
+    });
+
+    it("expand: 濁点合成 ｶﾞ → ガ", () => {
+      const r = normalizeText("ｶﾞｷﾞｸﾞｹﾞｺﾞ", { halfwidth_kana: "expand" });
+      expect(r.normalized).toBe("ガギグゲゴ");
+    });
+
+    it("expand: 半濁点合成 ﾊﾟ → パ", () => {
+      const r = normalizeText("ﾊﾟﾋﾟﾌﾟﾍﾟﾎﾟ", { halfwidth_kana: "expand" });
+      expect(r.normalized).toBe("パピプペポ");
+    });
+
+    it("expand: ｳﾞ → ヴ(濁点合成の特殊例)", () => {
+      const r = normalizeText("ｳﾞ", { halfwidth_kana: "expand" });
+      expect(r.normalized).toBe("ヴ");
+    });
+
+    it("expand: 句読点 ｡｢｣､･ → 。「」、・", () => {
+      const r = normalizeText("ｱｲｳ｡｢ｲｳｴ｣", { halfwidth_kana: "expand" });
+      expect(r.normalized).toBe("アイウ。「イウエ」");
+    });
+
+    it("expand: 小書き仮名 ｧｨｩｪｫｬｭｮｯ", () => {
+      const r = normalizeText("ｷｬｯﾄ", { halfwidth_kana: "expand" });
+      expect(r.normalized).toBe("キャット");
+    });
+
+    it("expand: ｦ → ヲ + 長音 ｰ → ー", () => {
+      const r = normalizeText("ｺｰﾋｰｦ", { halfwidth_kana: "expand" });
+      expect(r.normalized).toBe("コーヒーヲ");
+    });
+
+    it("expand: 単独の ﾞ ﾟ は U+309B / U+309C へ変換", () => {
+      const r = normalizeText("Aﾞ Aﾟ", { halfwidth_kana: "expand" });
+      expect(r.normalized).toBe("A゛ A゜");
+    });
+
+    it("expand: 半角カナ範囲外(漢字 / ひらがな / ASCII)は不変", () => {
+      const r = normalizeText("漢字ABCあいうｱｲｳ", { halfwidth_kana: "expand" });
+      expect(r.normalized).toBe("漢字ABCあいうアイウ");
+    });
+
+    it("preserve: 半角カナを変換しない", () => {
+      const r = normalizeText("ｱｲｳ", { halfwidth_kana: "preserve" });
+      expect(r.normalized).toBe("ｱｲｳ");
+      expect(r.changes).toEqual([]);
+    });
+
+    it("default(option 未指定)では半角カナを変換しない(後方互換性)", () => {
+      const r = normalizeText("ｱｲｳ");
+      expect(r.normalized).toBe("ｱｲｳ");
+      expect(r.changes).toEqual([]);
+    });
+
+    it("noop case(半角カナ不在)で change なし", () => {
+      const r = normalizeText("hello 漢字", { halfwidth_kana: "expand" });
+      expect(r.normalized).toBe("hello 漢字");
+      expect(r.changes).toEqual([]);
+    });
+
+    it("expand + kana=hiragana: 半角カナ → カタカナ → ひらがな", () => {
+      const r = normalizeText("ｶﾞｯｺｳ", { halfwidth_kana: "expand", kana: "hiragana" });
+      expect(r.normalized).toBe("がっこう");
+      expect(r.changes.map((c) => c.type)).toEqual(["halfwidth_kana", "kana"]);
+    });
+  });
+
   describe("combined", () => {
     it("scoping doc example: width=half + kana=katakana + spaces=single", () => {
       const r = normalizeText("ＡＢＣ１２３ あいうえお アイウエオ", {

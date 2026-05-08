@@ -150,6 +150,11 @@ components:
           type: string
           enum: [single, trim, preserve]
           default: preserve
+        halfwidth_kana:
+          type: string
+          enum: [expand, preserve]
+          default: preserve
+          description: 半角カタカナ U+FF61-U+FF9F → 全角カタカナ(濁点・半濁点合成)
 
     NormalizeRequest:
       type: object
@@ -167,7 +172,7 @@ components:
       properties:
         type:
           type: string
-          enum: [width, kana, spaces]
+          enum: [width, kana, spaces, halfwidth_kana]
         before: { type: string }
         after: { type: string }
 

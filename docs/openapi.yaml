@@ -212,6 +212,16 @@ components:
           enum: [single, trim, preserve]
           default: preserve
           description: 空白正規化(`single` は連続→単一、`trim` は加えて前後除去)
+        halfwidth_kana:
+          type: string
+          enum: [expand, preserve]
+          default: preserve
+          description: |
+            半角カタカナ(U+FF61-U+FF9F)の正規化。
+            `expand` で全角カタカナへ変換、濁点 `ﾞ` / 半濁点 `ﾟ` は前文字と合成
+            (例: `ｶﾞ` → `ガ`、`ﾊﾟ` → `パ`、`ｳﾞ` → `ヴ`)。句読点 `｡｢｣､･` も
+            全角化。`kana: hiragana` と併用すると半角カナ → 全角カナ → ひらがな
+            の連結変換が可能。
 
     NormalizeRequest:
       type: object
@@ -229,7 +239,7 @@ components:
       properties:
         type:
           type: string
-          enum: [width, kana, spaces]
+          enum: [width, kana, spaces, halfwidth_kana]
         before:
           type: string
         after:
