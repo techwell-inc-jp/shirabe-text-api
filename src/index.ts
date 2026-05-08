@@ -34,6 +34,14 @@ import {
   type FuriganaKana,
   type TokenLike as FuriganaTokenLike,
 } from "./furigana.js";
+import {
+  splitName,
+  type TokenLike as NameSplitTokenLike,
+} from "./name-split.js";
+import {
+  readName,
+  type TokenLike as NameReadingTokenLike,
+} from "./name-reading.js";
 import openapiYaml from "../docs/openapi.yaml";
 import openapiGptsYaml from "../docs/openapi-gpts.yaml";
 
@@ -117,6 +125,8 @@ app.get("/", (c) =>
       tokenize: "POST /api/v1/text/tokenize",
       normalize: "POST /api/v1/text/normalize",
       furigana: "POST /api/v1/text/furigana",
+      name_split: "POST /api/v1/text/name-split",
+      name_reading: "POST /api/v1/text/name-reading",
     },
   })
 );
@@ -460,6 +470,209 @@ app.post("/api/v1/text/furigana", async (c) => {
     console.error(`[shirabe-text-api] furigana error:`, msg);
     return c.json(
       { error: { code: "FURIGANA_ERROR", message: msg } },
+      500
+    );
+  }
+});
+
+/**
+ * POST /api/v1/text/name-split
+ *
+ * Request body: { name: string }
+ * Response: { name, family, given, confidence, warning?, matched_by, attribution }
+ *
+ * Lindera で形態素解析 → IPAdic 人名-姓 / 人名-名 タグを抽出 → fallback heuristic。
+ * IPAdic only MVP のため精度は著名人 80-90% / 一般 50-70% / 稀有 10-30%。
+ * 6 月モノレポ化時に JMnedict user dictionary 統合で底上げ予定(unilateral good news)。
+ *
+ * confidence < 0.5 で warning="low_confidence" を同梱(AI agent ergonomics)。
+ */
+app.post("/api/v1/text/name-split", async (c) => {
+  let body: { name?: unknown };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json(
+      {
+        error: {
+          code: "INVALID_REQUEST_BODY",
+          message: "Request body must be valid JSON.",
+        },
+      },
+      400
+    );
+  }
+
+  const name = body.name;
+  if (typeof name !== "string") {
+    return c.json(
+      {
+        error: {
+          code: "MISSING_NAME",
+          message: 'Request body must include "name": string.',
+        },
+      },
+      400
+    );
+  }
+
+  try {
+    const t0 = Date.now();
+    const { tokenizer, initMs, fetchMs, totalBytes } = await getTokenizer(c.env);
+    const setupMs = Date.now() - t0;
+
+    const tokenizeStart = Date.now();
+    const tokens = tokenizer.tokenize(name) as NameSplitTokenLike[];
+    const tokenizeMs = Date.now() - tokenizeStart;
+
+    const result = splitName(tokens);
+
+    return c.json({
+      name,
+      family: result.family,
+      given: result.given,
+      confidence: result.confidence,
+      ...(result.warning !== undefined && { warning: result.warning }),
+      matched_by: result.matched_by,
+      timing: {
+        tokenize_ms: tokenizeMs,
+        setup_ms: setupMs,
+        cold_start: setupMs > 100,
+        r2_fetch_ms: fetchMs,
+        tokenizer_init_ms: initMs,
+        dict_total_bytes: totalBytes,
+      },
+      attribution: {
+        dictionary: "IPAdic v3.0.7",
+        license: "BSD 3-Clause",
+        source: "https://github.com/lindera/lindera",
+        notes:
+          "IPAdic only MVP. Accuracy: well-known names 80-90%, ordinary 50-70%, rare 10-30%. JMnedict integration planned for monorepo phase (June 2026) to improve coverage.",
+      },
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error(`[shirabe-text-api] name-split error:`, msg);
+    return c.json(
+      { error: { code: "NAME_SPLIT_ERROR", message: msg } },
+      500
+    );
+  }
+});
+
+/**
+ * POST /api/v1/text/name-reading
+ *
+ * Request body: { name: string, options?: { kana?: "hiragana" | "katakana" } }
+ * Response: { name, family, given, family_reading, given_reading, reading,
+ *             candidates, confidence, warning?, matched_by, attribution }
+ *
+ * Lindera で形態素解析 → IPAdic 人名タグ token の details[7] を抽出 →
+ * family / given の読みに合成。candidates は IPAdic only では常に空 array。
+ */
+const VALID_NAME_READING_KANA: readonly FuriganaKana[] = ["hiragana", "katakana"];
+
+app.post("/api/v1/text/name-reading", async (c) => {
+  let body: { name?: unknown; options?: unknown };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json(
+      {
+        error: {
+          code: "INVALID_REQUEST_BODY",
+          message: "Request body must be valid JSON.",
+        },
+      },
+      400
+    );
+  }
+
+  const name = body.name;
+  if (typeof name !== "string") {
+    return c.json(
+      {
+        error: {
+          code: "MISSING_NAME",
+          message: 'Request body must include "name": string.',
+        },
+      },
+      400
+    );
+  }
+
+  const rawOptions = (body.options ?? {}) as Record<string, unknown>;
+  if (typeof rawOptions !== "object" || rawOptions === null || Array.isArray(rawOptions)) {
+    return c.json(
+      {
+        error: {
+          code: "INVALID_OPTIONS",
+          message: '"options" must be an object.',
+        },
+      },
+      400
+    );
+  }
+
+  let kanaMode: FuriganaKana = "hiragana";
+  if (rawOptions.kana !== undefined) {
+    if (!VALID_NAME_READING_KANA.includes(rawOptions.kana as FuriganaKana)) {
+      return c.json(
+        {
+          error: {
+            code: "INVALID_OPTIONS",
+            message: `"options.kana" must be one of: ${VALID_NAME_READING_KANA.join(", ")}.`,
+          },
+        },
+        400
+      );
+    }
+    kanaMode = rawOptions.kana as FuriganaKana;
+  }
+
+  try {
+    const t0 = Date.now();
+    const { tokenizer, initMs, fetchMs, totalBytes } = await getTokenizer(c.env);
+    const setupMs = Date.now() - t0;
+
+    const tokenizeStart = Date.now();
+    const tokens = tokenizer.tokenize(name) as NameReadingTokenLike[];
+    const tokenizeMs = Date.now() - tokenizeStart;
+
+    const result = readName(tokens, kanaMode);
+
+    return c.json({
+      name,
+      family: result.family,
+      given: result.given,
+      family_reading: result.family_reading,
+      given_reading: result.given_reading,
+      reading: result.reading,
+      candidates: result.candidates,
+      confidence: result.confidence,
+      ...(result.warning !== undefined && { warning: result.warning }),
+      matched_by: result.matched_by,
+      timing: {
+        tokenize_ms: tokenizeMs,
+        setup_ms: setupMs,
+        cold_start: setupMs > 100,
+        r2_fetch_ms: fetchMs,
+        tokenizer_init_ms: initMs,
+        dict_total_bytes: totalBytes,
+      },
+      attribution: {
+        dictionary: "IPAdic v3.0.7",
+        license: "BSD 3-Clause",
+        source: "https://github.com/lindera/lindera",
+        notes:
+          "IPAdic only MVP. candidates is always an empty array; alternative readings will be populated after JMnedict integration in monorepo phase (June 2026). Accuracy: well-known names 80-90%, ordinary 50-70%, rare 10-30%.",
+      },
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error(`[shirabe-text-api] name-reading error:`, msg);
+    return c.json(
+      { error: { code: "NAME_READING_ERROR", message: msg } },
       500
     );
   }
