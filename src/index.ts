@@ -23,6 +23,7 @@ import { rateLimitMiddleware } from "./middleware/rate-limit.js";
 import { usageCheckMiddleware } from "./middleware/usage-check.js";
 import {
   normalizeText,
+  type HalfwidthKanaMode,
   type NormalizeOptions,
   type WidthMode,
   type KanaMode,
@@ -234,14 +235,15 @@ app.post("/api/v1/text/tokenize", async (c) => {
 /**
  * POST /api/v1/text/normalize
  *
- * Request body: { text: string, options?: { width?, kana?, spaces? } }
+ * Request body: { text: string, options?: { width?, kana?, spaces?, halfwidth_kana? } }
  * Response: { text, normalized, changes[], attribution }
  *
- * Pure 文字列変換のみ(Lindera 不要)。Sudachi 表記正規化は Phase 2(別 endpoint or option 追加)。
+ * Pure 文字列変換のみ(Lindera 不要)。Sudachi 表記正規化は Phase 3(別 endpoint or option 追加)。
  */
 const VALID_WIDTH: readonly WidthMode[] = ["half", "full", "preserve"];
 const VALID_KANA: readonly KanaMode[] = ["hiragana", "katakana", "preserve"];
 const VALID_SPACES: readonly SpacesMode[] = ["single", "trim", "preserve"];
+const VALID_HALFWIDTH_KANA: readonly HalfwidthKanaMode[] = ["expand", "preserve"];
 
 app.post("/api/v1/text/normalize", async (c) => {
   let body: { text?: unknown; options?: unknown };
@@ -327,6 +329,20 @@ app.post("/api/v1/text/normalize", async (c) => {
       );
     }
     options.spaces = rawOptions.spaces as SpacesMode;
+  }
+  if (rawOptions.halfwidth_kana !== undefined) {
+    if (!VALID_HALFWIDTH_KANA.includes(rawOptions.halfwidth_kana as HalfwidthKanaMode)) {
+      return c.json(
+        {
+          error: {
+            code: "INVALID_OPTIONS",
+            message: `"options.halfwidth_kana" must be one of: ${VALID_HALFWIDTH_KANA.join(", ")}.`,
+          },
+        },
+        400
+      );
+    }
+    options.halfwidth_kana = rawOptions.halfwidth_kana as HalfwidthKanaMode;
   }
 
   const { normalized, changes } = normalizeText(text, options);
