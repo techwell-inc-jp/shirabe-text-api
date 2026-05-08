@@ -14,7 +14,7 @@ info:
   title: Shirabe Text API
   summary: 日本語テキストの形態素解析・正規化・ふりがな付与を提供する REST API。
   description: |
-    Japanese text-processing API: morphological analysis (Lindera + IPAdic), text normalization (fullwidth/halfwidth, hiragana/katakana, whitespace), and furigana (reading) annotation. Free tier: 10,000 anonymous calls/month. Full spec: https://shirabe.dev/api/v1/text/openapi.yaml
+    Japanese text-processing API: morphological analysis (Lindera + IPAdic), text normalization (fullwidth/halfwidth, hiragana/katakana, whitespace, halfwidth-kana, Sudachi-style spelling normalization), furigana (reading) annotation, name splitting (family/given), and name reading estimation. Free tier: 10,000 anonymous calls/month. Full spec: https://shirabe.dev/api/v1/text/openapi.yaml
   version: "0.1.0-phase2"
   termsOfService: https://shirabe.dev/terms
   contact:
@@ -55,7 +55,7 @@ paths:
       operationId: normalizeText
       summary: 日本語テキストの表記正規化
       description: |
-        Normalize Japanese text: ASCII fullwidth↔halfwidth, hiragana↔katakana, whitespace collapse/trim. Pure string transform (no dictionary). Options selected via `options` object.
+        Normalize Japanese text: ASCII fullwidth↔halfwidth, hiragana↔katakana, whitespace, halfwidth-kana expansion, and Sudachi-style spelling normalization (送り違い / 異体字 / カタカナ表記揺れ) via SudachiDict-derived lookup. Phase 1+2 are pure string ops; sudachi="apply" runs Lindera tokenize + map lookup.
       tags: [text]
       requestBody:
         required: true
@@ -91,6 +91,48 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FuriganaResponse'
+
+  /api/v1/text/name-split:
+    post:
+      operationId: splitName
+      summary: 日本語人名の姓名分割
+      description: |
+        Split a Japanese personal name into family/given parts using IPAdic 人名 POS tags with whitespace and length-based heuristic fallback. Returns confidence (0-1) and `warning="low_confidence"` when below 0.5. IPAdic-only MVP accuracy: well-known 80-90%, ordinary 50-70%, rare 10-30%. JMnedict integration planned for June 2026.
+      tags: [text]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NameSplitRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NameSplitResponse'
+
+  /api/v1/text/name-reading:
+    post:
+      operationId: readName
+      summary: 日本語人名の読み推定
+      description: |
+        Estimate reading (furigana) for a Japanese personal name. Returns family_reading, given_reading, and concatenated reading. `candidates` is always an empty array in the IPAdic-only MVP; alternative readings will be populated after JMnedict integration in June 2026. options.kana selects hiragana (default) or katakana.
+      tags: [text]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NameReadingRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NameReadingResponse'
 
 components:
   securitySchemes:
@@ -155,6 +197,11 @@ components:
           enum: [expand, preserve]
           default: preserve
           description: 半角カタカナ U+FF61-U+FF9F → 全角カタカナ(濁点・半濁点合成)
+        sudachi:
+          type: string
+          enum: [apply, preserve]
+          default: preserve
+          description: Sudachi 表記正規化(送り違い / 異体字 / カタカナ表記揺れ、SudachiDict-derived lookup)
 
     NormalizeRequest:
       type: object
@@ -172,7 +219,7 @@ components:
       properties:
         type:
           type: string
-          enum: [width, kana, spaces, halfwidth_kana]
+          enum: [width, kana, spaces, halfwidth_kana, sudachi]
         before: { type: string }
         after: { type: string }
 
@@ -223,6 +270,85 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FuriganaToken'
+        attribution:
+          $ref: '#/components/schemas/DictionaryAttribution'
+
+    NameMatchedBy:
+      type: string
+      enum: [dictionary_both, dictionary_family_only, dictionary_given_only, whitespace, heuristic, empty]
+
+    NameSplitRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          example: 吉川良介
+
+    NameSplitResponse:
+      type: object
+      required: [name, family, given, confidence, matched_by, attribution]
+      properties:
+        name: { type: string }
+        family: { type: string, example: 吉川 }
+        given: { type: string, example: 良介 }
+        confidence: { type: number, format: float, example: 0.97 }
+        warning:
+          type: string
+          enum: [low_confidence, empty_input]
+        matched_by:
+          $ref: '#/components/schemas/NameMatchedBy'
+        attribution:
+          $ref: '#/components/schemas/DictionaryAttribution'
+
+    NameReadingOptions:
+      type: object
+      properties:
+        kana:
+          type: string
+          enum: [hiragana, katakana]
+          default: hiragana
+
+    NameReadingRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          example: 吉川良介
+        options:
+          $ref: '#/components/schemas/NameReadingOptions'
+
+    NameReadingResponse:
+      type: object
+      required:
+        - name
+        - family
+        - given
+        - family_reading
+        - given_reading
+        - reading
+        - candidates
+        - confidence
+        - matched_by
+        - attribution
+      properties:
+        name: { type: string }
+        family: { type: string, example: 吉川 }
+        given: { type: string, example: 良介 }
+        family_reading: { type: string, example: よしかわ }
+        given_reading: { type: string, example: りょうすけ }
+        reading: { type: string, example: よしかわりょうすけ }
+        candidates:
+          type: array
+          items: { type: string }
+          description: Always empty in IPAdic-only MVP; populated after JMnedict integration (June 2026)
+        confidence: { type: number, format: float, example: 0.97 }
+        warning:
+          type: string
+          enum: [low_confidence, empty_input]
+        matched_by:
+          $ref: '#/components/schemas/NameMatchedBy'
         attribution:
           $ref: '#/components/schemas/DictionaryAttribution'
 

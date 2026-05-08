@@ -4,9 +4,10 @@ info:
   title: Shirabe Text API
   summary: 日本語テキストの形態素解析・正規化・ふりがな付与を提供する AI ネイティブ REST API。
   description: |
-    **Shirabe Text API** は、日本語テキストに対する形態素解析(Tokenize)、表記正規化(Normalize)、
-    ふりがな付与(Furigana)、姓名分割(Name Split)、人名読み推定(Name Reading)を AI エージェント
-    向けに提供する REST API です(Cloudflare Workers + Lindera-wasm + IPAdic v3.0.7)。
+    **Shirabe Text API** は、日本語テキストに対する形態素解析(Tokenize)、表記正規化(Normalize、
+    Sudachi 表記正規化込み)、ふりがな付与(Furigana)、姓名分割(Name Split)、人名読み推定
+    (Name Reading)を AI エージェント向けに提供する REST API です(Cloudflare Workers +
+    Lindera-wasm + IPAdic v3.0.7 + SudachiDict-derived normalization map)。
 
     ## なぜ自前実装ではなく本 API を使うか
     日本語の形態素解析・読み推定・全/半角統一・ひらがな/カタカナ変換は LLM 任せにすると
@@ -74,9 +75,10 @@ paths:
       operationId: normalizeText
       summary: 日本語テキストの表記正規化
       description: |
-        全/半角統一、ひらがな/カタカナ変換、空白正規化を任意組合せで適用する。
-        純文字列処理(辞書不要)。Phase 2 で Sudachi 表記正規化(送り違い / 異体字 / 縮約)
-        を別 option で追加予定。
+        全/半角統一、ひらがな/カタカナ変換、空白正規化、半角カタカナ展開、
+        Sudachi 表記正規化(送り違い / 異体字 / カタカナ表記揺れ)を任意組合せで適用する。
+        Phase 1+2 (width/kana/spaces/halfwidth_kana) は純文字列処理、Phase 3 (sudachi="apply")
+        は Lindera tokenize + SudachiDict 由来 normalized_form lookup を適用。
       tags: [text]
       requestBody:
         required: true
@@ -120,6 +122,70 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FuriganaResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /api/v1/text/name-split:
+    post:
+      operationId: splitName
+      summary: 日本語人名の姓名分割
+      description: |
+        日本語人名(例: 「吉川良介」)を family / given に分割する。Lindera + IPAdic で
+        形態素解析後、人名タグ(`名詞-固有名詞-人名-姓` / `名詞-固有名詞-人名-名`)を
+        頼りに抽出。タグが付かない場合は空白区切り → 長さベース heuristic に fallback。
+        confidence < 0.5 で `warning: "low_confidence"` を同梱(AI agent ergonomics)。
+        IPAdic only MVP の精度想定: 著名人 80-90% / 一般 50-70% / 稀有 10-30%。
+        2026 年 6 月のモノレポ化時に JMnedict user dictionary 統合で精度向上予定
+        (unilateral good news、課金プラン変更なし)。
+      tags: [text]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NameSplitRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NameSplitResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /api/v1/text/name-reading:
+    post:
+      operationId: readName
+      summary: 日本語人名の読み推定
+      description: |
+        日本語人名の読みを推定して family_reading / given_reading / reading(連結)を返す。
+        name-split と同型のロジックで姓名分割した後、IPAdic の `details[7]`(片仮名読み)を
+        抽出して `options.kana`(hiragana 既定 / katakana)で出力。`candidates` は
+        IPAdic only MVP では常に空配列(JMnedict 統合後 = 2026 年 6 月以降に異読候補を populate)。
+        姓 / 名タグが付かない token は surface fallback で reading 劣化、warning で明示。
+      tags: [text]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NameReadingRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NameReadingResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -222,6 +288,17 @@ components:
             (例: `ｶﾞ` → `ガ`、`ﾊﾟ` → `パ`、`ｳﾞ` → `ヴ`)。句読点 `｡｢｣､･` も
             全角化。`kana: hiragana` と併用すると半角カナ → 全角カナ → ひらがな
             の連結変換が可能。
+        sudachi:
+          type: string
+          enum: [apply, preserve]
+          default: preserve
+          description: |
+            Sudachi 表記正規化(送り違い / 異体字 / カタカナ表記揺れ)。
+            `apply` で Lindera tokenize + SudachiDict 由来 lookup map を適用、
+            各トークンを normalized_form に置換。Phase 1+2 後に適用される
+            (例: `行なう` → `行う`、`コンピュータ` → `コンピューター`、
+            `デヴィルズ` → `デビルズ`)。Lindera 起動を伴うため cold start で
+            +50-200 ms 程度。本番 5/31 リリース時に活性化、それまでは preserve のみ実効。
 
     NormalizeRequest:
       type: object
@@ -239,7 +316,7 @@ components:
       properties:
         type:
           type: string
-          enum: [width, kana, spaces, halfwidth_kana]
+          enum: [width, kana, spaces, halfwidth_kana, sudachi]
         before:
           type: string
         after:
@@ -258,8 +335,16 @@ components:
           items:
             $ref: '#/components/schemas/NormalizeChange'
           description: 適用された変換ステップ(noop は省略)
+        timing:
+          $ref: '#/components/schemas/NormalizeTiming'
+          description: Phase 3 (sudachi="apply") を使った場合のみ含まれる
         attribution:
-          $ref: '#/components/schemas/ServiceAttribution'
+          oneOf:
+            - $ref: '#/components/schemas/ServiceAttribution'
+            - $ref: '#/components/schemas/SudachiAttribution'
+          description: |
+            Phase 1+2 のみ使用時は ServiceAttribution、Phase 3 (sudachi="apply") 適用時は
+            SudachiAttribution(SudachiDict + Lindera + IPAdic の license / source 同梱)。
 
     FuriganaOptions:
       type: object
@@ -298,6 +383,137 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FuriganaToken'
+        timing:
+          $ref: '#/components/schemas/Timing'
+        attribution:
+          $ref: '#/components/schemas/DictionaryAttribution'
+
+    NameMatchedBy:
+      type: string
+      enum:
+        - dictionary_both
+        - dictionary_family_only
+        - dictionary_given_only
+        - whitespace
+        - heuristic
+        - empty
+      description: |
+        姓名分割 / 読み推定の判定経路。
+        - `dictionary_both`: 隣接 姓+名 タグペア(信頼度最高、confidence 0.97)
+        - `dictionary_family_only`: 姓 タグのみ + 後続を given 扱い(0.7)
+        - `dictionary_given_only`: 名 タグのみ + 先行を family 扱い(0.7)
+        - `whitespace`: 空白区切り 2 セグメント(0.6)
+        - `heuristic`: 長さベース 1+1 / 2+1 / 2+残 split(0.4 + warning)
+        - `empty`: 空入力(0)
+
+    NameSplitRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          description: 分割対象の日本語人名
+          example: 吉川良介
+
+    NameSplitResponse:
+      type: object
+      required: [name, family, given, confidence, matched_by, attribution]
+      properties:
+        name:
+          type: string
+        family:
+          type: string
+          description: 姓(分割不能時は空文字)
+          example: 吉川
+        given:
+          type: string
+          description: 名(分割不能時は空文字)
+          example: 良介
+        confidence:
+          type: number
+          format: float
+          description: 0-1 の信頼度。0.5 未満で warning 同梱
+          example: 0.97
+        warning:
+          type: string
+          enum: [low_confidence, empty_input]
+          description: confidence < 0.5 または空入力時のみ含まれる
+        matched_by:
+          $ref: '#/components/schemas/NameMatchedBy'
+        timing:
+          $ref: '#/components/schemas/Timing'
+        attribution:
+          $ref: '#/components/schemas/DictionaryAttribution'
+
+    NameReadingOptions:
+      type: object
+      properties:
+        kana:
+          type: string
+          enum: [hiragana, katakana]
+          default: hiragana
+          description: 読みのカナ種別
+
+    NameReadingRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          description: 読み推定対象の日本語人名
+          example: 吉川良介
+        options:
+          $ref: '#/components/schemas/NameReadingOptions'
+
+    NameReadingResponse:
+      type: object
+      required:
+        - name
+        - family
+        - given
+        - family_reading
+        - given_reading
+        - reading
+        - candidates
+        - confidence
+        - matched_by
+        - attribution
+      properties:
+        name:
+          type: string
+        family:
+          type: string
+          example: 吉川
+        given:
+          type: string
+          example: 良介
+        family_reading:
+          type: string
+          description: 姓の読み(辞書 hit 時のみ正確、surface fallback 時は surface 等)
+          example: よしかわ
+        given_reading:
+          type: string
+          example: りょうすけ
+        reading:
+          type: string
+          description: family_reading + given_reading の連結
+          example: よしかわりょうすけ
+        candidates:
+          type: array
+          items:
+            type: string
+          description: |
+            異読候補。**IPAdic only MVP では常に空配列**。
+            2026 年 6 月のモノレポ化時に JMnedict user dictionary 統合で populate 予定。
+        confidence:
+          type: number
+          format: float
+          example: 0.97
+        warning:
+          type: string
+          enum: [low_confidence, empty_input]
+        matched_by:
+          $ref: '#/components/schemas/NameMatchedBy'
         timing:
           $ref: '#/components/schemas/Timing'
         attribution:
@@ -345,6 +561,64 @@ components:
           type: string
           format: uri
           example: https://shirabe.dev
+
+    SudachiAttribution:
+      type: object
+      required:
+        - service
+        - url
+        - dictionary
+        - dictionary_license
+        - dictionary_source
+        - tokenizer
+        - tokenizer_license
+      properties:
+        service:
+          type: string
+          example: shirabe-text-api
+        url:
+          type: string
+          format: uri
+          example: https://shirabe.dev
+        dictionary:
+          type: string
+          description: SudachiDict 由来の正規化マップ
+          example: SudachiDict-small
+        dictionary_license:
+          type: string
+          example: Apache-2.0
+        dictionary_source:
+          type: string
+          format: uri
+          example: https://github.com/WorksApplications/SudachiDict
+        tokenizer:
+          type: string
+          example: Lindera + IPAdic v3.0.7
+        tokenizer_license:
+          type: string
+          example: MIT (Lindera) / BSD 3-Clause (IPAdic)
+
+    NormalizeTiming:
+      type: object
+      description: Phase 3 (sudachi="apply") 適用時のみ含まれる
+      properties:
+        setup_ms:
+          type: integer
+        cold_start:
+          type: boolean
+        tokenize_ms:
+          type: integer
+        sudachi_lookup_ms:
+          type: integer
+        map_fetch_ms:
+          type: integer
+          description: cold start 時のみ非ゼロ
+        map_parse_ms:
+          type: integer
+          description: cold start 時のみ非ゼロ
+        map_entries:
+          type: integer
+          description: SudachiDict 由来 lookup map のエントリ数
 
     Error:
       type: object
