@@ -22,6 +22,7 @@
  * Filter:
  *   - surface !== normalized_form(変更ありエントリのみ)
  *   - conjugation_form (col 10) ∈ {"*", "終止形-一般"}(活用形 drift 排除、行なう→行う を保ち つき→尽きる を排除)
+ *   - surface に日本語文字(ひらがな / カタカナ / 漢字)を 1 文字以上含む(ASCII 専用 surface = 装飾的変換を排除、例: "10"→"⑩", "1st"→"ファースト")
  *
  * Output: { "<surface>": "<normalized_form>", ... }
  *   - surface 重複時は最初に現れたエントリを採用(SudachiDict は活用優先順で並ぶため最初が一般的)
@@ -77,6 +78,10 @@ function main() {
   let skippedConj = 0;
   let skippedShort = 0;
   let skippedShape = 0;
+  let skippedNonJp = 0;
+
+  // ひらがな(U+3041-U+309F)、カタカナ(U+30A0-U+30FF)、CJK 統合漢字(U+4E00-U+9FFF)
+  const HAS_JP = /[ぁ-ゟ゠-ヿ一-鿿]/;
 
   for (const line of lines) {
     if (!line) continue;
@@ -98,6 +103,11 @@ function main() {
       skippedShape++;
       continue;
     }
+    // surface に日本語文字を含まない場合は排除(装飾的変換 e.g. "10"→"⑩", "1st"→"ファースト" を排除)
+    if (!HAS_JP.test(surface)) {
+      skippedNonJp++;
+      continue;
+    }
     if (surface in map) { skippedDup++; continue; }
     map[surface] = normalized;
     kept++;
@@ -109,6 +119,7 @@ function main() {
   console.log(`Skipped duplicates: ${skippedDup}`);
   console.log(`Skipped short: ${skippedShort}`);
   console.log(`Skipped 1-char ASCII: ${skippedShape}`);
+  console.log(`Skipped non-Japanese surface: ${skippedNonJp}`);
 
   mkdirSync(dirname(output), { recursive: true });
   const json = JSON.stringify(map);
