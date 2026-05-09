@@ -4,13 +4,19 @@ compatibility_date = "2026-05-05"
 compatibility_flags = ["nodejs_compat"]
 account_id = "e23b560b7a00ce93fb33faa6cc7bc244"
 
-# Workers ルート(5/31 リリース時に経営者が Cloudflare Dashboard で routes を追加するか
-# 本セクションを有効化する)。Phase 2 開発中は workers.dev のみで動作。
+# Workers ルート:
+#   - /docs/text-* は B-3 cluster 効果獲得のため 5/10 で部分活性化(soft launch)
+#     6 docs ページ(text-tokenize / -normalize / -furigana / -name-split / -name-reading / -pricing)
+#     は PR #9 で production-grade(JSON-LD / "Coming 5/31" narrative 同梱)
+#   - /api/v1/text/* は 5/31 正式リリース時に下のコメントアウトを解除
+#
+# Cloudflare routes precedence: path-based Worker Route(本 worker)は
+# calendar-api の custom_domain `shirabe.dev` よりも具体的なため優先される。
+[[routes]]
+pattern = "shirabe.dev/docs/text-*"
+zone_name = "shirabe.dev"
 # [[routes]]
 # pattern = "shirabe.dev/api/v1/text/*"
-# zone_name = "shirabe.dev"
-# [[routes]]
-# pattern = "shirabe.dev/docs/text-*"
 # zone_name = "shirabe.dev"
 
 [vars]
