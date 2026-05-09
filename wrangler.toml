@@ -15,6 +15,9 @@ account_id = "e23b560b7a00ce93fb33faa6cc7bc244"
 [[routes]]
 pattern = "shirabe.dev/docs/text-*"
 zone_name = "shirabe.dev"
+[[routes]]
+pattern = "shirabe.dev/announcements/2026-05-31"
+zone_name = "shirabe.dev"
 # [[routes]]
 # pattern = "shirabe.dev/api/v1/text/*"
 # zone_name = "shirabe.dev"
