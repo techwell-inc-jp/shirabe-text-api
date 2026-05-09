@@ -21,6 +21,7 @@ import type { AppEnv, Env } from "./types/env.js";
 import { authMiddleware } from "./middleware/auth.js";
 import { rateLimitMiddleware } from "./middleware/rate-limit.js";
 import { usageCheckMiddleware } from "./middleware/usage-check.js";
+import { usageLoggerMiddleware } from "./middleware/usage-logger.js";
 import {
   normalizeText,
   type HalfwidthKanaMode,
@@ -222,10 +223,17 @@ app.get("/docs/text-pricing", (c) =>
   c.html(renderTextPricingDocPage(), 200, { "Cache-Control": DOCS_CACHE })
 );
 
-/** /api/v1/text/* は auth → rate-limit → usage-check の順で適用。 */
+/**
+ * /api/v1/text/* middleware chain(暦・住所 API と同順):
+ *   auth → usage-check(月間上限)→ rate-limit(秒次/月次)→ usage-logger(成功時カウント)
+ *
+ * usage-logger を最後に置くことで、上限到達 / レート制限 / 認証エラー時はカウントせず、
+ * 正常に処理されたリクエストのみ usage-monthly KV をインクリメントする。
+ */
 app.use("/api/v1/text/*", authMiddleware);
-app.use("/api/v1/text/*", rateLimitMiddleware);
 app.use("/api/v1/text/*", usageCheckMiddleware);
+app.use("/api/v1/text/*", rateLimitMiddleware);
+app.use("/api/v1/text/*", usageLoggerMiddleware);
 
 /**
  * POST /api/v1/text/tokenize

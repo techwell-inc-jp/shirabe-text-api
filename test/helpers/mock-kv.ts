@@ -1,0 +1,92 @@
+/**
+ * Cloudflare KVNamespace / Analytics Engine のテスト用モック(text API)。
+ * 暦・住所 API の `test/helpers/mock-kv.ts` と同型。
+ */
+
+export class MockKV {
+  private store = new Map<string, { value: string; expiration?: number }>();
+
+  async get(key: string): Promise<string | null> {
+    const entry = this.store.get(key);
+    if (!entry) return null;
+    if (entry.expiration && Date.now() / 1000 > entry.expiration) {
+      this.store.delete(key);
+      return null;
+    }
+    return entry.value;
+  }
+
+  async put(
+    key: string,
+    value: string,
+    options?: { expirationTtl?: number; expiration?: number }
+  ): Promise<void> {
+    if (options?.expirationTtl !== undefined && options.expirationTtl < 60) {
+      throw new Error(
+        `KV PUT failed: 400 Invalid expiration_ttl of ${options.expirationTtl}. Expiration TTL must be at least 60.`
+      );
+    }
+    const expiration =
+      options?.expiration ??
+      (options?.expirationTtl ? Date.now() / 1000 + options.expirationTtl : undefined);
+    this.store.set(key, { value, expiration });
+  }
+
+  async delete(key: string): Promise<void> {
+    this.store.delete(key);
+  }
+
+  async list(opts?: { prefix?: string }): Promise<{ keys: Array<{ name: string }> }> {
+    const prefix = opts?.prefix ?? "";
+    const keys = Array.from(this.store.keys())
+      .filter((k) => k.startsWith(prefix))
+      .map((name) => ({ name }));
+    return { keys };
+  }
+
+  clear(): void {
+    this.store.clear();
+  }
+
+  get size(): number {
+    return this.store.size;
+  }
+}
+
+export class MockAnalyticsEngine {
+  public readonly points: Array<{
+    blobs?: string[];
+    doubles?: number[];
+    indexes?: string[];
+  }> = [];
+  public throwOnWrite = false;
+
+  writeDataPoint = (point: {
+    blobs?: string[];
+    doubles?: number[];
+    indexes?: string[];
+  }): void => {
+    if (this.throwOnWrite) {
+      throw new Error("[mock] Analytics Engine write failed");
+    }
+    this.points.push(point);
+  };
+
+  clear(): void {
+    this.points.length = 0;
+  }
+
+  get size(): number {
+    return this.points.length;
+  }
+}
+
+export function createMockEnv() {
+  return {
+    API_KEYS: new MockKV() as unknown as KVNamespace,
+    RATE_LIMITS: new MockKV() as unknown as KVNamespace,
+    USAGE_LOGS: new MockKV() as unknown as KVNamespace,
+    ANALYTICS: new MockAnalyticsEngine(),
+    API_VERSION: "1.0.0",
+  };
+}
