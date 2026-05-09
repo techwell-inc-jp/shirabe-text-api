@@ -56,6 +56,8 @@ import { renderTextFuriganaDocPage } from "./pages/docs-text-furigana.js";
 import { renderTextNameSplitDocPage } from "./pages/docs-text-name-split.js";
 import { renderTextNameReadingDocPage } from "./pages/docs-text-name-reading.js";
 import { renderTextPricingDocPage } from "./pages/docs-text-pricing.js";
+import { checkout } from "./routes/checkout.js";
+import { webhook } from "./routes/webhook.js";
 
 /** R2 上の IPAdic 辞書ファイル名(順序は loadDictionaryFromBytes の引数順)。 */
 const DICT_KEYS = [
@@ -222,6 +224,18 @@ app.get("/docs/text-name-reading", (c) =>
 app.get("/docs/text-pricing", (c) =>
   c.html(renderTextPricingDocPage(), 200, { "Cache-Control": DOCS_CACHE })
 );
+
+/**
+ * Stripe Webhook(/webhook/stripe)— middleware より先に mount。
+ * 署名検証で全ての認証チェックを代替するため、auth / rate-limit / usage-* は適用しない。
+ */
+app.route("/webhook/stripe", webhook);
+
+/**
+ * Stripe Checkout(/api/v1/text/checkout)— middleware より先に mount。
+ * 匿名 Free でも有料プランへ申込可能とするため auth chain を適用しない。
+ */
+app.route("/api/v1/text/checkout", checkout);
 
 /**
  * /api/v1/text/* middleware chain(暦・住所 API と同順):
