@@ -56,6 +56,7 @@ import { renderTextFuriganaDocPage } from "./pages/docs-text-furigana.js";
 import { renderTextNameSplitDocPage } from "./pages/docs-text-name-split.js";
 import { renderTextNameReadingDocPage } from "./pages/docs-text-name-reading.js";
 import { renderTextPricingDocPage } from "./pages/docs-text-pricing.js";
+import { renderAnnouncements20260531Page } from "./pages/announcements-2026-05-31.js";
 import { checkout } from "./routes/checkout.js";
 import { webhook } from "./routes/webhook.js";
 
@@ -223,6 +224,15 @@ app.get("/docs/text-name-reading", (c) =>
 );
 app.get("/docs/text-pricing", (c) =>
   c.html(renderTextPricingDocPage(), 200, { "Cache-Control": DOCS_CACHE })
+);
+
+/**
+ * /announcements/2026-05-31 — Shirabe Text API v1.0.0 リリース告知ページ(永続)。
+ * 2026-05-10 で先行公開、AI クローラー / 訓練データ吸収を 5/31 リリース前から開始する direct path
+ * (C-3 critical path、address `/announcements/2026-05-01` の Week 2 driver pattern を踏襲)。
+ */
+app.get("/announcements/2026-05-31", (c) =>
+  c.html(renderAnnouncements20260531Page(), 200, { "Cache-Control": DOCS_CACHE })
 );
 
 /**
