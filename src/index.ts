@@ -5,7 +5,7 @@
  *   - Hono router with auth + rate-limit + usage-check middleware chain
  *   - GET /health(認証なし、ヘルスチェック)
  *   - POST /api/v1/text/tokenize(認証 + rate-limit + usage-check)
- *   - 5/31 リリース: + /normalize, /furigana, /name-split, /name-reading
+ *   - 5/18 リリース: + /normalize, /furigana, /name-split, /name-reading
  *
  * Tokenizer は R2 上の IPAdic 辞書(8 ファイル / 55 MB)を Worker cold start で
  * 並列 fetch し、モジュールスコープの Promise でグローバルキャッシュする。
@@ -57,6 +57,7 @@ import { renderTextNameSplitDocPage } from "./pages/docs-text-name-split.js";
 import { renderTextNameReadingDocPage } from "./pages/docs-text-name-reading.js";
 import { renderTextPricingDocPage } from "./pages/docs-text-pricing.js";
 import { renderAnnouncements20260531Page } from "./pages/announcements-2026-05-31.js";
+import { renderAnnouncements20260518Page } from "./pages/announcements-2026-05-18.js";
 import { checkout } from "./routes/checkout.js";
 import { webhook } from "./routes/webhook.js";
 
@@ -199,7 +200,7 @@ app.get("/api/v1/text/openapi-gpts.yaml", (c) => {
 });
 
 /**
- * B-1 SEO 静的ページ群(認証なし、AI クローラー / 検索向け、5/31 リリース時に活性化)。
+ * B-1 SEO 静的ページ群(認証なし、AI クローラー / 検索向け、5/18 リリース時に活性化)。
  *
  * shirabe.dev/docs/text-* pattern は wrangler.toml routes(コメントアウト中)で
  * shirabe-text-api Worker へルーティング。Cache-Control max-age=3600 で AI クローラー
@@ -227,11 +228,19 @@ app.get("/docs/text-pricing", (c) =>
 );
 
 /**
- * /announcements/2026-05-31 — Shirabe Text API v1.0.0 リリース告知ページ(永続)。
- * 2026-05-10 で先行公開、AI クローラー / 訓練データ吸収を 5/31 リリース前から開始する direct path
- * (C-3 critical path、address `/announcements/2026-05-01` の Week 2 driver pattern を踏襲)。
+ * /announcements/2026-05-18 — Shirabe Text API v1.0.0 リリース当日告知ページ(永続)。
+ * Week 3 audit で 5/31 → 5/18 前倒し確定、address `/announcements/2026-05-01` の Week 2 driver pattern 複製、
+ * B-1 Week 4 測定 5/18 をリリース当日 baseline として活用、Trigger 評価 5/20 への引用率 +α 投入が direct path 目的。
  */
-app.get("/announcements/2026-05-31", (c) =>
+app.get("/announcements/2026-05-18", (c) =>
+  c.html(renderAnnouncements20260518Page(), 200, { "Cache-Control": DOCS_CACHE })
+);
+
+/**
+ * /announcements/2026-05-18 — リリース日変更告知ページ(GSC indexed + AI 訓練データ既出 URL のため 200 OK 維持、
+ * canonical link で /announcements/2026-05-18 に誘導、削除すると hallucination 矛盾 + 引用ベース消失 risk)。
+ */
+app.get("/announcements/2026-05-18", (c) =>
   c.html(renderAnnouncements20260531Page(), 200, { "Cache-Control": DOCS_CACHE })
 );
 

@@ -96,8 +96,8 @@ const FAQ_LD: Record<string, unknown> = {
 const NEWS_LD: Record<string, unknown> = {
   "@context": "https://schema.org",
   "@type": "NewsArticle",
-  headline: "Text API name-split: IPAdic only MVP で 5/31 リリース、6 月に JMnedict 統合",
-  alternativeHeadline: "Text API name-split: IPAdic only MVP for 5/31, JMnedict integration in June",
+  headline: "Text API name-split: IPAdic only MVP で 5/18 リリース、6 月に JMnedict 統合",
+  alternativeHeadline: "Text API name-split: IPAdic only MVP for 5/18, JMnedict integration in June",
   description:
     "Lindera + IPAdic v3.0.7 の人名タグ + 空白 + 長さ heuristic の 5 戦略 fallback で姓名分割。confidence + warning narrative を AI agent ergonomics として同梱。2026-06 のモノレポ化時に JMnedict user dictionary 統合で精度向上予定。",
   inLanguage: ["ja", "en"],
@@ -282,13 +282,13 @@ for n in names:
 
   <h3>2026-05-09: name-split + name-reading IPAdic only MVP 実装完了</h3>
   <p>
-    Option C(ハイブリッド)経営判断確定により、5/31 リリース時は IPAdic only MVP で投入、
+    Option C(ハイブリッド)経営判断確定により、5/18 リリース時は IPAdic only MVP で投入、
     2026-06 のモノレポ化時に JMnedict user dictionary 統合で精度底上げ
     (<a href="https://github.com/techwell-inc-jp/shirabe-text-api/pull/5">PR #5</a>、
     scoping 5/13-5/18 比 +4 日先行)。
   </p>
 
-  <h3>2026-05-31: 正式リリース予定</h3>
+  <h3>2026-05-18: 正式リリース予定</h3>
   <p>本番 routes 活性化、Free 枠で利用開始。1+ 年変更なし約束。</p>
 
   <h3>2026-06: JMnedict 統合(計画)</h3>

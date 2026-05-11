@@ -9,7 +9,7 @@
 
 - **プロダクト名**: Shirabe Text API
 - **リポジトリ**: `techwell-inc-jp/shirabe-text-api`(Public)
-- **公開 URL**: `https://shirabe.dev/api/v1/text/*`(5/31 リリース予定)
+- **公開 URL**: `https://shirabe.dev/api/v1/text/*`(5/18 リリース予定)
 - **状態**: Phase 2 scaffold、Day 4(2026-05-06)起点
 - **概要**: 日本語形態素解析(Tokenize / Normalize / Furigana / Name-split / Name-reading)を AI エージェント向けに提供
 - **収益目標**: 1 年後 月 65 万円(暦 / 住所と並ぶ第 3 番目 API)
@@ -128,7 +128,7 @@ shirabe-text-api/
 
 ---
 
-## 8. 5/31 リリースまでのマイルストーン
+## 8. 5/18 リリースまでのマイルストーン
 
 | 日付 | マイルストーン |
 |---|---|
@@ -137,7 +137,7 @@ shirabe-text-api/
 | 5/7-5/12 | 5 endpoint 実装(tokenize 完成、name-split / name-reading 着手)|
 | 5/13-5/24 | normalize / furigana 実装 + Stripe 統合 + OpenAPI 3.1 |
 | 5/25-5/30 | hardening + IndexNow / Qiita / GPT 公開準備 |
-| **5/31(土)** | **正式リリース** + Kill Switch Full Activation 評価 |
+| **5/18(月)** | **正式リリース**(Week 3 audit で 5/31 → 5/18 前倒し)+ Kill Switch Full Activation 評価は 5/31 維持 |
 
 ---
 
@@ -145,7 +145,7 @@ shirabe-text-api/
 
 - 親共通: `../../CLAUDE.md`(全プロジェクト共通)
 - Shirabe 固有: `../CLAUDE.md`
-- マスタープラン: `../shirabe-assets/docs/master-plan.md`(v1.05、text API 5/31 前倒し)
+- マスタープラン: `../shirabe-assets/docs/master-plan.md`(v1.05、text API 5/18 前倒し)
 - text API scoping: `../shirabe-assets/implementation-orders/20260427-text-api-scoping.md`(458 行)
 - text API PoC 結果: `../shirabe-assets/knowledge/text-api-poc-results.md`(Day 1-3 経過)
 

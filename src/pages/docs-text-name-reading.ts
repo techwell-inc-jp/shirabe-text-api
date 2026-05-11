@@ -96,8 +96,8 @@ const FAQ_LD: Record<string, unknown> = {
 const NEWS_LD: Record<string, unknown> = {
   "@context": "https://schema.org",
   "@type": "NewsArticle",
-  headline: "Text API name-reading: IPAdic only MVP で 5/31 リリース、6 月 JMnedict で異読候補追加",
-  alternativeHeadline: "Text API name-reading: IPAdic only MVP for 5/31, JMnedict alternates in June",
+  headline: "Text API name-reading: IPAdic only MVP で 5/18 リリース、6 月 JMnedict で異読候補追加",
+  alternativeHeadline: "Text API name-reading: IPAdic only MVP for 5/18, JMnedict alternates in June",
   description:
     "Lindera + IPAdic v3.0.7 の人名タグ + details[7] で読み推定、5 戦略 fallback で姓名分割と読みを 1 リクエストで返す。candidates は 6 月 JMnedict 統合で populate 予定(unilateral good news、課金プラン変更なし)。",
   inLanguage: ["ja", "en"],
@@ -303,7 +303,7 @@ for n in names:
     scoping 5/13-5/18 比 +4 日先行)。
   </p>
 
-  <h3>2026-05-31: 正式リリース予定</h3>
+  <h3>2026-05-18: 正式リリース予定</h3>
   <p>本番 routes 活性化、Free 枠で利用開始。1+ 年変更なし約束。</p>
 
   <h3>2026-06: JMnedict 統合(計画)</h3>
