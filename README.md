@@ -7,11 +7,11 @@
 
 日本語テキストの **形態素解析・正規化・ふりがな付与・姓名分割・人名読み推定** を AI エージェント向けに提供する REST API。Cloudflare Workers 単層構成、Lindera-wasm + IPAdic v3.0.7 + SudachiDict-derived normalization map。
 
-- **本番 URL**: `https://shirabe.dev`(2026-05-31 リリース予定)
+- **本番 URL**: `https://shirabe.dev`(2026-05-18 リリース予定)
 - **OpenAPI 3.1**: [`/api/v1/text/openapi.yaml`](https://shirabe.dev/api/v1/text/openapi.yaml)(本家)/ [`/api/v1/text/openapi-gpts.yaml`](https://shirabe.dev/api/v1/text/openapi-gpts.yaml)(GPTs 短縮版)
-- **MCP / GPT Actions**: 5/31 リリース時に同梱
+- **MCP / GPT Actions**: 5/18 リリース時に同梱
 - **License**: [MIT](./LICENSE)
-- **Documentation**: [`/docs/text-*`](https://shirabe.dev/docs/text-pricing)(5 endpoint + pricing、5/31 活性化)
+- **Documentation**: [`/docs/text-*`](https://shirabe.dev/docs/text-pricing)(5 endpoint + pricing、5/18 活性化)
 
 ---
 

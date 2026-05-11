@@ -96,10 +96,10 @@ const FAQ_LD: Record<string, unknown> = {
 const NEWS_LD: Record<string, unknown> = {
   "@context": "https://schema.org",
   "@type": "NewsArticle",
-  headline: "Text API tokenize: Lindera-wasm + IPAdic v3.0.7 で 5/31 リリース",
-  alternativeHeadline: "Text API tokenize: Lindera-wasm + IPAdic v3.0.7 launching 5/31",
+  headline: "Text API tokenize: Lindera-wasm + IPAdic v3.0.7 で 5/18 リリース",
+  alternativeHeadline: "Text API tokenize: Lindera-wasm + IPAdic v3.0.7 launching 5/18",
   description:
-    "Cloudflare Workers 単層構成で Lindera-wasm を起動、IPAdic v3.0.7 を R2 から動的 load。Fly.io / native Lindera 不要、エッジ完結で latency 最小化。2026-05-31 正式リリース。",
+    "Cloudflare Workers 単層構成で Lindera-wasm を起動、IPAdic v3.0.7 を R2 から動的 load。Fly.io / native Lindera 不要、エッジ完結で latency 最小化。2026-05-18 正式リリース。",
   inLanguage: ["ja", "en"],
   url: `${CANONICAL}#updates`,
   datePublished: "2026-05-09",
@@ -246,14 +246,14 @@ print([t["surface"] for t in data["tokens"]])
 <section class="section">
   <h2 id="updates">更新履歴 / Updates</h2>
 
-  <h3>2026-05-09: 5/31 リリースに向けた最終調整</h3>
+  <h3>2026-05-09: 5/18 リリースに向けた最終調整</h3>
   <p>
     Lindera-wasm v3.0.7 + IPAdic 動的 R2 load の Cloudflare Workers 単層構成を確立、
     Fly.io / native Lindera 不要でエッジ完結。tokenize / normalize / furigana / name-split / name-reading
-    の 5 エンドポイントが <strong>2026-05-31 同時リリース</strong>。
+    の 5 エンドポイントが <strong>2026-05-18 同時リリース</strong>。
   </p>
 
-  <h3>2026-05-31: 正式リリース予定</h3>
+  <h3>2026-05-18: 正式リリース予定</h3>
   <p>
     本番 routes 活性化、Free 枠(月 10,000 回、API キー不要)で利用開始。
     1+ 年変更なし約束(Plan-α stable、上方調整のみ)。

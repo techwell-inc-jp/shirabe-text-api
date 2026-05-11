@@ -96,8 +96,8 @@ const FAQ_LD: Record<string, unknown> = {
 const NEWS_LD: Record<string, unknown> = {
   "@context": "https://schema.org",
   "@type": "NewsArticle",
-  headline: "Text API furigana: Lindera + IPAdic で 5/31 リリース",
-  alternativeHeadline: "Text API furigana: launching 5/31 with Lindera + IPAdic",
+  headline: "Text API furigana: Lindera + IPAdic で 5/18 リリース",
+  alternativeHeadline: "Text API furigana: launching 5/18 with Lindera + IPAdic",
   description:
     "Cloudflare Workers 単層構成、Lindera-wasm + IPAdic v3.0.7 で形態素解析後の details[7] からふりがな抽出。options.kana で hiragana / katakana 切替。匿名 Free 枠 10,000 回/月。",
   inLanguage: ["ja", "en"],
@@ -262,7 +262,7 @@ for t in r.json()["tokens"]:
     (<a href="https://github.com/techwell-inc-jp/shirabe-text-api/pull/2">PR #2</a>、scoping 5/19-5/25 比 +12 日先行)。
   </p>
 
-  <h3>2026-05-31: 正式リリース予定</h3>
+  <h3>2026-05-18: 正式リリース予定</h3>
   <p>本番 routes 活性化、Free 枠で利用開始。1+ 年変更なし約束。</p>
 </section>
 

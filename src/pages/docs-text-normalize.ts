@@ -98,8 +98,8 @@ const FAQ_LD: Record<string, unknown> = {
 const NEWS_LD: Record<string, unknown> = {
   "@context": "https://schema.org",
   "@type": "NewsArticle",
-  headline: "Text API normalize: Phase 3 Sudachi 表記正規化を 5/31 リリースに同梱(2026-05-09)",
-  alternativeHeadline: "Text API normalize: Phase 3 Sudachi normalization included in 5/31 release",
+  headline: "Text API normalize: Phase 3 Sudachi 表記正規化を 5/18 リリースに同梱(2026-05-09)",
+  alternativeHeadline: "Text API normalize: Phase 3 Sudachi normalization included in 5/18 release",
   description:
     "SudachiDict 由来の lookup map (88,622 entries / 1.13 MB) を R2 配信、options.sudachi=\"apply\" で送り違い / 異体字 / カタカナ表記揺れ吸収。upstream Lindera 変更不要の自己完結経路で実現。",
   inLanguage: ["ja", "en"],
@@ -325,7 +325,7 @@ print(r.json()["normalized"])
 <section class="section">
   <h2 id="updates">更新履歴 / Updates</h2>
 
-  <h3>2026-05-09: Phase 3 Sudachi 表記正規化 5/31 リリースに同梱確定</h3>
+  <h3>2026-05-09: Phase 3 Sudachi 表記正規化 5/18 リリースに同梱確定</h3>
   <p>
     SudachiDict-small (Apache-2.0) 由来の lookup map (88,622 entries / 1.13 MB) を R2 配信、
     <code>options.sudachi="apply"</code> で送り違い / 異体字 / カタカナ表記揺れ吸収。
@@ -338,7 +338,7 @@ print(r.json()["normalized"])
     先行実装(<a href="https://github.com/techwell-inc-jp/shirabe-text-api/pull/4">PR #4</a>)。
   </p>
 
-  <h3>2026-05-31: 正式リリース予定</h3>
+  <h3>2026-05-18: 正式リリース予定</h3>
   <p>本番 routes 活性化、Free 枠で利用開始。1+ 年変更なし約束。</p>
 </section>
 

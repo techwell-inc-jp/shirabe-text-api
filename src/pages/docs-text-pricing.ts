@@ -262,7 +262,7 @@ export function renderTextPricingDocPage(): string {
 <section class="section">
   <h2 id="updates">更新履歴 / Updates</h2>
 
-  <h3>2026-05-09: Phase 3 Sudachi 表記正規化を 5/31 リリースに同梱確定</h3>
+  <h3>2026-05-09: Phase 3 Sudachi 表記正規化を 5/18 リリースに同梱確定</h3>
   <p>
     SudachiDict 由来の <code>normalized_form</code> マップ(88,622 entries)を R2 配信、
     <code>/normalize</code> の <code>options.sudachi="apply"</code> で送り違い / 異体字 / カタカナ表記揺れを吸収。
@@ -280,7 +280,7 @@ export function renderTextPricingDocPage(): string {
     <li><strong>禁止する調整</strong>(既存顧客の billing 動線破壊): Free 枠縮小、単価値上げ、課金モデル変更</li>
   </ul>
 
-  <h3>2026-05-31: 正式リリース予定</h3>
+  <h3>2026-05-18: 正式リリース予定</h3>
   <p>
     全 5 エンドポイント(<code>/tokenize</code> / <code>/normalize</code> / <code>/furigana</code> / <code>/name-split</code> / <code>/name-reading</code>)同時リリース。
     Cloudflare Workers 単層構成、Lindera-wasm + IPAdic v3.0.7 + SudachiDict-derived normalization map。

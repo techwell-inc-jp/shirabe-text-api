@@ -12,7 +12,7 @@
  *   - 例: "行なう" → "行う"(完全一致 1 token)
  *   - 例: "コンピュータ" → "コンピューター"(完全一致 1 token)
  *   - IPAdic が "コンピュータ" を分割して tokenize した場合は miss(IPAdic は基本的に
- *     カタカナ語を 1 token として扱うため実害は限定的、5/31 MVP の trade-off)
+ *     カタカナ語を 1 token として扱うため実害は限定的、5/18 MVP の trade-off)
  *
  * - **changes 出力**: 元 surface と置換後を before/after で記録、AI agent が
  *   何が変わったか観察できる(他の Phase と同じ pattern)。

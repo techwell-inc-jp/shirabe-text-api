@@ -298,7 +298,7 @@ components:
             各トークンを normalized_form に置換。Phase 1+2 後に適用される
             (例: `行なう` → `行う`、`コンピュータ` → `コンピューター`、
             `デヴィルズ` → `デビルズ`)。Lindera 起動を伴うため cold start で
-            +50-200 ms 程度。本番 5/31 リリース時に活性化、それまでは preserve のみ実効。
+            +50-200 ms 程度。本番 5/18 リリース時に活性化、それまでは preserve のみ実効。
 
     NormalizeRequest:
       type: object
