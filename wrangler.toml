@@ -25,12 +25,13 @@ zone_name = "shirabe.dev"
 [vars]
 API_VERSION = "0.1.0-phase2"
 
-# Stripe Price ID(text API 用、5/13-5/24 で経営者が Stripe Dashboard で発行予定)
-# Meter: shirabe_text_api_requests(未発行、5/13-5/24 で発行予定)
-# STRIPE_PRICE_STARTER = "TBD"
-# STRIPE_PRICE_PRO = "TBD"
-# STRIPE_PRICE_ENTERPRISE = "TBD"
-# STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET は `wrangler secret put` で注入
+# Stripe Price ID(text API 用、2026-05-11 経営者発行完了、暦 API と同型 [vars] 平文配置)
+# Meter: shirabe_text_api_requests = mtr_61Uf5qKTKrq2TuxCh41DV2wkNs8tVS6S
+# Plan-α stable(暦 API と同単価 ¥0.05 / ¥0.03 / ¥0.01、transform_quantity[divide_by=1000, round=up])
+STRIPE_PRICE_STARTER = "price_1TVi68DV2wkNs8tVry5EUNye"
+STRIPE_PRICE_PRO = "price_1TVi8XDV2wkNs8tVmKktAjvG"
+STRIPE_PRICE_ENTERPRISE = "price_1TViA7DV2wkNs8tVOxdaDFnZ"
+# STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET は `wrangler secret put` で注入(別タスク)
 
 # R2 binding for IPAdic dictionary(8 ファイル / 55 MB、Day 3 PoC で活性化済)
 [[r2_buckets]]
