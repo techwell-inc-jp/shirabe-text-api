@@ -32,7 +32,7 @@ async function signPayload(payload: string, secret = SECRET, ts?: number): Promi
 
 function buildApp(): Hono<AppEnv> {
   const app = new Hono<AppEnv>();
-  app.route("/webhook/stripe", webhook);
+  app.route("/webhook/stripe/text", webhook);
   return app;
 }
 
@@ -45,7 +45,7 @@ async function post(
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (signature) headers["Stripe-Signature"] = signature;
   return app.fetch(
-    new Request("http://localhost/webhook/stripe", {
+    new Request("http://localhost/webhook/stripe/text", {
       method: "POST",
       headers,
       body,

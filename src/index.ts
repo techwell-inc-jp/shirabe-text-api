@@ -245,10 +245,13 @@ app.get("/announcements/2026-05-31", (c) =>
 );
 
 /**
- * Stripe Webhook(/webhook/stripe)— middleware より先に mount。
- * 署名検証で全ての認証チェックを代替するため、auth / rate-limit / usage-* は適用しない。
+ * Stripe Webhook(/webhook/stripe/text)— middleware より先に mount。
+ * text API 専用 path:calendar-api の `/webhook/stripe` と衝突回避(custom_domain shirabe.dev より
+ * 具体的な path-based route は Cloudflare で先勝ち)。Stripe Dashboard 側で endpoint を
+ * API ごとに分けて管理可能。署名検証で全ての認証チェックを代替するため、
+ * auth / rate-limit / usage-* は適用しない。
  */
-app.route("/webhook/stripe", webhook);
+app.route("/webhook/stripe/text", webhook);
 
 /**
  * Stripe Checkout(/api/v1/text/checkout)— middleware より先に mount。
