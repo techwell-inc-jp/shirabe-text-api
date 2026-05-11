@@ -1,7 +1,7 @@
 /**
  * Stripe Webhook 自動処理(text API、Phase 4 scaffold)
  *
- * POST /webhook/stripe
+ * POST /webhook/stripe/text
  * - auth / rate-limit / usage-check / usage-logger 全てバイパス
  * - Stripe 署名検証(Web Crypto API HMAC SHA-256)+ event.id ベース dedupe
  *

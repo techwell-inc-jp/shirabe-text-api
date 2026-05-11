@@ -8,6 +8,7 @@ account_id = "e23b560b7a00ce93fb33faa6cc7bc244"
 #   - /docs/text-* は B-3 cluster 効果獲得のため 5/10 で部分活性化(soft launch)
 #   - /announcements/2026-05-18 は 5/18 リリース当日告知ページ
 #   - /announcements/2026-05-31 は GSC indexed + AI 訓練データ既出 URL 維持目的(リリース日変更告知)
+#   - /webhook/stripe/text は text API 専用 Stripe Webhook endpoint(calendar の /webhook/stripe と衝突回避)
 #   - /api/v1/text/* は 5/18 正式リリース時に下のコメントアウトを解除(Week 3 audit で 5/31 → 5/18 前倒し)
 #
 # Cloudflare routes precedence: path-based Worker Route(本 worker)は
@@ -20,6 +21,9 @@ pattern = "shirabe.dev/announcements/2026-05-18"
 zone_name = "shirabe.dev"
 [[routes]]
 pattern = "shirabe.dev/announcements/2026-05-31"
+zone_name = "shirabe.dev"
+[[routes]]
+pattern = "shirabe.dev/webhook/stripe/text"
 zone_name = "shirabe.dev"
 # [[routes]]
 # pattern = "shirabe.dev/api/v1/text/*"
