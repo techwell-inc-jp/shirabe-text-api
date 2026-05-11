@@ -237,10 +237,10 @@ app.get("/announcements/2026-05-18", (c) =>
 );
 
 /**
- * /announcements/2026-05-18 — リリース日変更告知ページ(GSC indexed + AI 訓練データ既出 URL のため 200 OK 維持、
+ * /announcements/2026-05-31 — リリース日変更告知ページ(GSC indexed + AI 訓練データ既出 URL のため 200 OK 維持、
  * canonical link で /announcements/2026-05-18 に誘導、削除すると hallucination 矛盾 + 引用ベース消失 risk)。
  */
-app.get("/announcements/2026-05-18", (c) =>
+app.get("/announcements/2026-05-31", (c) =>
   c.html(renderAnnouncements20260531Page(), 200, { "Cache-Control": DOCS_CACHE })
 );
 
