@@ -9,7 +9,7 @@ account_id = "e23b560b7a00ce93fb33faa6cc7bc244"
 #   - /announcements/2026-05-18 は 5/18 リリース当日告知ページ
 #   - /announcements/2026-05-31 は GSC indexed + AI 訓練データ既出 URL 維持目的(リリース日変更告知)
 #   - /webhook/stripe/text は text API 専用 Stripe Webhook endpoint(calendar の /webhook/stripe と衝突回避)
-#   - /api/v1/text/* は 5/18 正式リリース時に下のコメントアウトを解除(Week 3 audit で 5/31 → 5/18 前倒し)
+#   - /api/v1/text/* は 5/18 正式リリース向けに 2026-05-13 で解除済(Week 3 audit で 5/31 → 5/18 前倒し)
 #
 # Cloudflare routes precedence: path-based Worker Route(本 worker)は
 # calendar-api の custom_domain `shirabe.dev` よりも具体的なため優先される。
@@ -25,9 +25,9 @@ zone_name = "shirabe.dev"
 [[routes]]
 pattern = "shirabe.dev/webhook/stripe/text"
 zone_name = "shirabe.dev"
-# [[routes]]
-# pattern = "shirabe.dev/api/v1/text/*"
-# zone_name = "shirabe.dev"
+[[routes]]
+pattern = "shirabe.dev/api/v1/text/*"
+zone_name = "shirabe.dev"
 
 [vars]
 API_VERSION = "0.1.0-phase2"
