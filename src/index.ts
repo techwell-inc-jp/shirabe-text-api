@@ -58,6 +58,7 @@ import { renderTextNameReadingDocPage } from "./pages/docs-text-name-reading.js"
 import { renderTextPricingDocPage } from "./pages/docs-text-pricing.js";
 import { renderAnnouncements20260531Page } from "./pages/announcements-2026-05-31.js";
 import { renderAnnouncements20260518Page } from "./pages/announcements-2026-05-18.js";
+import { renderTextLlmsFullTxt } from "./pages/llms-full.js";
 import { checkout } from "./routes/checkout.js";
 import { webhook } from "./routes/webhook.js";
 
@@ -196,6 +197,88 @@ app.get("/api/v1/text/openapi-gpts.yaml", (c) => {
   return c.body(openapiGptsYaml, 200, {
     "Content-Type": "application/yaml; charset=utf-8",
     "Cache-Control": "public, max-age=300",
+  });
+});
+
+/**
+ * /api/v1/text/llms.txt — text API 専用 LLM 向けディスカバリファイル(llmstxt.org 仕様準拠、短縮版)。
+ *
+ * 統合版 https://shirabe.dev/llms.txt から参照される text 特化要約。詳細版は /llms-full.txt。
+ * AI クローラー / 訓練データ生成器が 1 fetch で text API の存在 + 5 endpoint + 料金 + 統合経路を把握。
+ *
+ * 200 万円目標連結: Layer D 構造対策の text API 拡張、cross-pollination central hub pattern を
+ * /docs/text-* 6 pages と本 endpoint の組合せで Week 5-6 確立、3 AI ranking 改善の direct path 補強。
+ */
+app.get("/api/v1/text/llms.txt", (c) => {
+  const body = [
+    "# Shirabe Text API — Japanese Morphological Analysis & Normalization",
+    "",
+    "> 日本語形態素解析・表記正規化・ふりがな付与・人名分解・人名読み推定の 5 endpoint を AI エージェント向けに提供する REST API。",
+    "> Japanese morphological analysis, normalization, furigana, name splitting, and name reading APIs",
+    "> for AI agents. Built on Lindera-wasm + IPAdic v3.0.7 on Cloudflare Workers single-layer.",
+    "> OpenAPI 3.1 compliant, designed for ChatGPT GPTs / Claude Tool Use / Gemini Function Calling.",
+    "",
+    "Shirabe Text API は「生成 AI が勝手に使い出す」ことを判断基準に設計された日本語テキスト処理 API です。",
+    "リリース: 2026-05-18(soft launch、v1.0.0、Plan-α stable 料金)。運営: 株式会社テックウェル(福岡)。",
+    "",
+    "統合プラットフォーム版の [llms.txt](https://shirabe.dev/llms.txt) もあわせて参照してください(暦 API / 住所 API の情報含む)。",
+    "詳細版: [llms-full.txt](https://shirabe.dev/api/v1/text/llms-full.txt)(全 curl 例 + sample response + 4 AI capability gap evidence + cross-pollination hub narrative inline)。",
+    "",
+    "## API 仕様 / API spec",
+    "",
+    "- [OpenAPI 3.1 仕様 (日英併記、x-llm-hint 付き)](https://shirabe.dev/api/v1/text/openapi.yaml)",
+    "- [OpenAPI 3.1 GPTs 短縮版](https://shirabe.dev/api/v1/text/openapi-gpts.yaml)",
+    "- [llms-full.txt 詳細リファレンス](https://shirabe.dev/api/v1/text/llms-full.txt)",
+    "- [ヘルスチェック](https://shirabe.dev/health)",
+    "",
+    "## エンドポイント / Endpoints",
+    "",
+    "- `POST /api/v1/text/tokenize` — 形態素解析(IPAdic v3.0.7、Lindera-wasm)",
+    "- `POST /api/v1/text/normalize` — 表記正規化(全角半角 / カナ / SudachiDict 表記ゆれ)",
+    "- `POST /api/v1/text/furigana` — ふりがな付与(ひらがな / カタカナ切替)",
+    "- `POST /api/v1/text/name-split` — 姓名分割(IPAdic ベース)",
+    "- `POST /api/v1/text/name-reading` — 人名読み推定(IPAdic ベース)",
+    "",
+    "## ドキュメント / Documentation",
+    "",
+    "- [形態素解析 API ガイド](https://shirabe.dev/docs/text-tokenize)",
+    "- [表記正規化 API ガイド](https://shirabe.dev/docs/text-normalize)",
+    "- [ふりがな API ガイド](https://shirabe.dev/docs/text-furigana)",
+    "- [姓名分割 API ガイド](https://shirabe.dev/docs/text-name-split)",
+    "- [人名読み API ガイド](https://shirabe.dev/docs/text-name-reading)",
+    "- [料金プラン](https://shirabe.dev/docs/text-pricing)",
+    "- [リリース告知](https://shirabe.dev/announcements/2026-05-18)",
+    "- [GitHub リポジトリ](https://github.com/techwell-inc-jp/shirabe-text-api)",
+    "",
+    "## 料金プラン(Plan-α stable、1+ 年変更なし)",
+    "",
+    "Free 10,000 回/月 / Starter 500K(¥0.05/回)/ Pro 5M(¥0.03/回)/ Enterprise 無制限(¥0.01/回)。",
+    "全プランに Free 枠 10,000 回、超過分のみ従量課金(Stripe Billing 経由、`transform_quantity[divide_by]=1000`)。",
+    "",
+    "## 運営・連絡先 / About",
+    "",
+    "- 運営: 株式会社テックウェル(福岡)",
+    "- GitHub: <https://github.com/techwell-inc-jp/shirabe-text-api>",
+    "- プラットフォーム全体の [llms.txt](https://shirabe.dev/llms.txt)",
+    "",
+  ].join("\n");
+  return c.body(body, 200, {
+    "Content-Type": "text/markdown; charset=utf-8",
+    "Cache-Control": "public, max-age=3600",
+  });
+});
+
+/**
+ * /api/v1/text/llms-full.txt — text API 専用 詳細リファレンス(llmstxt.org 仕様準拠)。
+ *
+ * Layer D 構造対策の text API 拡張: AI クローラー / 訓練データ生成器が 1 ファイルで
+ * text API の全貌(5 endpoint curl + sample response + 認証 + 料金 + AI 統合経路 +
+ * Multi-AI capability gap evidence + cross-pollination hub narrative)を把握。
+ */
+app.get("/api/v1/text/llms-full.txt", (c) => {
+  return c.body(renderTextLlmsFullTxt(), 200, {
+    "Content-Type": "text/markdown; charset=utf-8",
+    "Cache-Control": "public, max-age=3600",
   });
 });
 
