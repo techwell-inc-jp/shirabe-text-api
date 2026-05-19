@@ -62,6 +62,14 @@ id = "18c0bd1723604b01b2a0c7992427da53"
 binding = "USAGE_LOGS"
 id = "6f1ad57596ec4ed5badffbe3773ffc14"
 
+# Analytics Engine: text API 専用 conversion funnel 計測(2026-05-19 起票)。
+# 暦 API (shirabe_calendar_events) / 住所 API (shirabe_address_events) と blob 順序を
+# 揃え、横断 SQL クエリ + 既存 /internal/stats SQL 流用を可能にする。
+# 5/20 Trigger 評価以降の Week 5+ で text API 由来 funnel 観測 default 化。
+[[analytics_engine_datasets]]
+binding = "ANALYTICS"
+dataset = "shirabe_text_events"
+
 # YAML ファイルをテキストモジュールとしてバンドルに取り込む(GET /openapi.yaml 用、5/24 まで)
 [[rules]]
 type = "Text"
