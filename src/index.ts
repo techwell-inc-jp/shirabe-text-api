@@ -59,6 +59,7 @@ import { renderTextPricingDocPage } from "./pages/docs-text-pricing.js";
 import { renderAnnouncements20260531Page } from "./pages/announcements-2026-05-31.js";
 import { renderAnnouncements20260518Page } from "./pages/announcements-2026-05-18.js";
 import { renderTextLlmsFullTxt } from "./pages/llms-full.js";
+import { analyticsMiddleware } from "./middleware/analytics.js";
 import { checkout } from "./routes/checkout.js";
 import { webhook } from "./routes/webhook.js";
 
@@ -160,6 +161,12 @@ async function getNormalizeMap(env: Env) {
 }
 
 const app = new Hono<AppEnv>();
+
+// S1 計測基盤: Analytics Engine 記録ミドルウェア(全ルート対象、最先頭で登録)。
+// レスポンス後に 1 req = 1 書込で `shirabe_text_events` Dataset に記録。
+// 計測失敗はレスポンスに影響させない。auth-less 経路(/health, /docs/*, /announcements/*,
+// /api/v1/text/openapi*.yaml, /api/v1/text/llms*.txt)も含めて全 funnel 段を観測。
+app.use("*", analyticsMiddleware);
 
 /** ヘルスチェック(認証なし)。 */
 app.get("/health", (c) =>
