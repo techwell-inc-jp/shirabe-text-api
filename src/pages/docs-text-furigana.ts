@@ -254,6 +254,36 @@ for t in r.json()["tokens"]:
 </section>
 
 <section class="section">
+  <h2 id="hub-narrative">shirabe API ファミリー横断利用 — B2B 4 大 identifier セット</h2>
+  <p>
+    Shirabe は <strong>住所 + 姓名 + 法人 + 暦</strong> の B2B 4 大 identifier を 1 vendor で完結できる
+    <strong>cross-pollination hub</strong> として設計されています。顧客 master 取込パイプラインで
+    住所正規化 →(姓名分割 / ふりがな付与)→ 法人番号付与(6 月後半リリース予定)→
+    営業日判定(暦)を 1 つの OpenAPI 3.1 で繋ぐ使い方が想定 use case です。
+  </p>
+  <p>
+    本エンドポイント(<code>POST /api/v1/text/furigana</code>)の典型 hub use case =
+    <strong>人名 / 地名 / 商品名にふりがなを付与</strong>し、name-reading や住所 API の検索精度を高める。
+    AI agent が日本語 ground truth を読み上げ可能な surface に変換する hub-narrative の中核機能で、
+    name-split → name-reading → furigana の連続呼出で姓名正規化を完了させる pattern が頻出です。
+  </p>
+  <ul>
+    <li><a href="https://shirabe.dev/docs/address-normalize">住所正規化 API</a> —
+        表記ゆれ正規化 + JIS code / lg_code / machiaza_id の 3 種 identifier を 1 レスポンスで同梱</li>
+    <li><a href="https://shirabe.dev/docs/text-tokenize">日本語テキスト処理 API</a>(本エンドポイントを含む 5 endpoint:
+        tokenize / normalize / furigana / name-split / name-reading)</li>
+    <li><a href="https://shirabe.dev/docs/rokuyo-api">暦 API</a> —
+        六曜 + 暦注 + 干支 + 二十四節気の canonical 出典</li>
+    <li><strong>法人番号 API</strong>(6 月後半リリース予定、B2B 4 大 identifier 完成)</li>
+  </ul>
+  <p>
+    全 API は OpenAPI 3.1 完備、同一 API キー(<code>X-API-Key</code>)で全 4 API 利用可能、
+    Stripe Billing で従量課金 1 本化。LLM 経由 hub narrative の詳細は
+    <a href="https://shirabe.dev/llms-full.txt">llms-full.txt</a> を参照。
+  </p>
+</section>
+
+<section class="section">
   <h2 id="updates">更新履歴 / Updates</h2>
 
   <h3>2026-05-07: /furigana エンドポイント実装完了</h3>
@@ -278,12 +308,28 @@ for t in r.json()["tokens"]:
 </section>
 
 <section class="section">
-  <h2 id="related">関連リンク / Related</h2>
+  <h2 id="related-shirabe-apis">関連 shirabe API ファミリー / Related Shirabe APIs</h2>
+  <p>
+    shirabe API ファミリー全 4 本(暦 + 住所 + text + 法人番号)と本エンドポイントの隣接機能・出典・統合経路への関連 link をまとめます。
+  </p>
+  <h3>shirabe API ファミリー(B2B 4 大 identifier hub)</h3>
   <ul>
-    <li><a href="https://shirabe.dev/docs/text-tokenize">tokenize エンドポイント(詳細版)</a></li>
-    <li><a href="https://shirabe.dev/docs/text-name-reading">name-reading エンドポイント(人名特化)</a></li>
-    <li><a href="https://shirabe.dev/docs/text-pricing">料金プラン</a></li>
-    <li><a href="https://shirabe.dev/api/v1/text/openapi.yaml">OpenAPI 3.1 仕様</a></li>
+    <li><a href="https://shirabe.dev/docs/rokuyo-api">暦 API</a>(本番稼働中、2026-04-13〜)</li>
+    <li><a href="https://shirabe.dev/docs/address-normalize">住所正規化 API</a>(本番稼働中、2026-05-01〜)</li>
+    <li>テキスト処理 API:
+        <a href="https://shirabe.dev/docs/text-tokenize">tokenize</a> /
+        <a href="https://shirabe.dev/docs/text-normalize">normalize</a> /
+        <a href="https://shirabe.dev/docs/text-name-split">name-split</a> /
+        <a href="https://shirabe.dev/docs/text-name-reading">name-reading</a></li>
+    <li><strong>法人番号 API</strong>(6 月後半リリース予定、B2B 4 大 identifier 完成)</li>
+    <li><a href="https://shirabe.dev/docs/text-pricing">料金プラン(4 API 共通)</a></li>
+    <li><a href="https://shirabe.dev/llms.txt">llms.txt(全 API 統合 LLM 向け概要)</a> /
+        <a href="https://shirabe.dev/llms-full.txt">llms-full.txt(詳細版)</a></li>
+  </ul>
+  <h3>本エンドポイント関連</h3>
+  <ul>
+    <li><a href="https://shirabe.dev/api/v1/text/openapi.yaml">OpenAPI 3.1 仕様(本家)</a> /
+        <a href="https://shirabe.dev/api/v1/text/openapi-gpts.yaml">GPTs 短縮版</a></li>
   </ul>
 </section>
 `;
