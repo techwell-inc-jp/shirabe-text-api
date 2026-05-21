@@ -155,3 +155,53 @@ describe("Text API docs pages — cross-linking", () => {
     }
   });
 });
+
+describe("Text API docs pages — Phase A hub narrative (cross-pollination hub)", () => {
+  it("each page contains hub-narrative section", () => {
+    for (const page of PAGES) {
+      const html = page.render();
+      expect(html).toContain('id="hub-narrative"');
+      expect(html).toContain("shirabe API ファミリー横断利用");
+      expect(html).toContain("B2B 4 大 identifier セット");
+    }
+  });
+
+  it("each page contains related-shirabe-apis section (replaces legacy related)", () => {
+    for (const page of PAGES) {
+      const html = page.render();
+      expect(html).toContain('id="related-shirabe-apis"');
+      expect(html).toContain("関連 shirabe API ファミリー");
+    }
+  });
+
+  it("each page links to all 3 live shirabe APIs (rokuyo / address / text family)", () => {
+    for (const page of PAGES) {
+      const html = page.render();
+      expect(html).toContain("https://shirabe.dev/docs/rokuyo-api");
+      expect(html).toContain("https://shirabe.dev/docs/address-normalize");
+      expect(html).toContain("https://shirabe.dev/docs/text-tokenize");
+    }
+  });
+
+  it("each page mentions 4th API (法人番号) as future release (no URL)", () => {
+    for (const page of PAGES) {
+      const html = page.render();
+      expect(html).toContain("法人番号 API");
+      expect(html).toMatch(/6 月後半リリース予定/);
+    }
+  });
+
+  it("each page links to llms.txt or llms-full.txt for hub narrative", () => {
+    for (const page of PAGES) {
+      const html = page.render();
+      expect(html).toContain("https://shirabe.dev/llms-full.txt");
+    }
+  });
+
+  it("each page mentions cross-pollination hub design pattern", () => {
+    for (const page of PAGES) {
+      const html = page.render();
+      expect(html).toContain("cross-pollination hub");
+    }
+  });
+});
