@@ -167,6 +167,19 @@ describe("checkout.session.completed handler", () => {
 
     expect(await env.USAGE_LOGS.get("stripe-reverse:cus_x")).toContain(hash);
     expect(await env.USAGE_LOGS.get("email:u@example.com")).toBe(hash);
+
+    // G-A Phase 1: cross-API correlation entry が書かれている
+    const enc = new TextEncoder();
+    const hashBuf = await crypto.subtle.digest("SHA-256", enc.encode("u@example.com"));
+    const expectedEmailHash = Array.from(new Uint8Array(hashBuf))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+    const correlation = await env.USAGE_LOGS.get(`correlation:${expectedEmailHash}`);
+    expect(correlation).not.toBeNull();
+    const entry = JSON.parse(correlation!);
+    expect(entry.api).toBe("text");
+    expect(entry.plan).toBe("starter");
+    expect(entry.status).toBe("active");
   });
 
   it("既存 apis.calendar を破壊せず apis.text を merge", async () => {

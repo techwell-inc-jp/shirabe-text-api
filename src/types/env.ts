@@ -35,6 +35,10 @@ export type Env = {
   STRIPE_PRICE_PRO?: string;
   /** Stripe Price ID — Enterprise */
   STRIPE_PRICE_ENTERPRISE?: string;
+  /** Basic 認証ユーザー名(internal endpoints、暦・住所と同 credential 想定、5/31 リリース時 secret 投入) */
+  INTERNAL_STATS_USER?: string;
+  /** Basic 認証パスワード(internal endpoints) */
+  INTERNAL_STATS_PASS?: string;
 };
 
 export type AppVariables = {
