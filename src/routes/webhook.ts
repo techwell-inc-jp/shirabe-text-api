@@ -21,8 +21,40 @@ import {
   type ApiPlanInfo,
   type StoredApiKeyInfo,
 } from "../types/api-key.js";
+import { sha256Hex } from "../util/sha256.js";
 
 const webhook = new Hono<AppEnv>();
+
+/**
+ * G-A Phase 1: cross-API correlation KV write(text API 側)
+ *
+ * KV key: `correlation:{email_sha256}` を USAGE_LOGS(text API 専用 namespace)に書込。
+ * value: { api: "text", stripe_customer_id, plan, status, subscribed_at, updated_at }
+ *
+ * Phase 1 範囲: checkout.session.completed のみ書込。drift 許容。
+ * 本実装は 5/31 リリース時に routes 活性化、最初の text 顧客契約時から計測開始。
+ */
+async function writeCorrelationEntry(
+  usageLogsKV: KVNamespace,
+  email: string,
+  stripeCustomerId: string | undefined,
+  plan: string,
+  status: "active" | "suspended" | "canceled"
+): Promise<void> {
+  const emailNormalized = email.trim().toLowerCase();
+  if (!emailNormalized) return;
+  const emailHash = await sha256Hex(emailNormalized);
+  const now = new Date().toISOString();
+  const entry = {
+    api: "text",
+    stripe_customer_id: stripeCustomerId,
+    plan,
+    status,
+    subscribed_at: now,
+    updated_at: now,
+  };
+  await usageLogsKV.put(`correlation:${emailHash}`, JSON.stringify(entry));
+}
 
 // 既存 KV 値が新フォーマットなら返す。旧フォーマット / parse 失敗 / 未登録は null。
 function readExistingAggregated(stored: string | null): AggregatedApiKeyInfo | null {
@@ -209,6 +241,11 @@ async function handleCheckoutCompleted(
 
   if (pending.email) {
     await usageLogsKV.put(`email:${pending.email}`, apiKeyHash);
+  }
+
+  // G-A Phase 1: cross-API correlation KV write
+  if (pending.email) {
+    await writeCorrelationEntry(usageLogsKV, pending.email, stripeCustomerId, plan, "active");
   }
 
   // checkout-pending は削除しない(/checkout/success との競合回避、TTL 1h で自動失効)。

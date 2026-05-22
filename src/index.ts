@@ -62,6 +62,7 @@ import { renderTextLlmsFullTxt } from "./pages/llms-full.js";
 import { analyticsMiddleware } from "./middleware/analytics.js";
 import { checkout } from "./routes/checkout.js";
 import { webhook } from "./routes/webhook.js";
+import { internalCorrelation } from "./routes/internal-correlation.js";
 
 /** R2 上の IPAdic 辞書ファイル名(順序は loadDictionaryFromBytes の引数順)。 */
 const DICT_KEYS = [
@@ -348,6 +349,11 @@ app.route("/webhook/stripe/text", webhook);
  * 匿名 Free でも有料プランへ申込可能とするため auth chain を適用しない。
  */
 app.route("/api/v1/text/checkout", checkout);
+
+// G-A Phase 1: /api/v1/text/internal/correlation (Basic 認証、INTERNAL_STATS_USER/PASS)
+// shirabe-assets weekly batch script から fetch、cross-API 顧客併用率算出用。
+// secrets は 5/31 リリース前に経営者投入予定、それまで 401(全拒否)。
+app.route("/api/v1/text/internal", internalCorrelation);
 
 /**
  * /api/v1/text/* middleware chain(暦・住所 API と同順):
