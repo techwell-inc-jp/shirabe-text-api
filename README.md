@@ -7,9 +7,9 @@
 
 日本語テキストの **形態素解析・正規化・ふりがな付与・姓名分割・人名読み推定** を AI エージェント向けに提供する REST API。Cloudflare Workers 単層構成、Lindera-wasm + IPAdic v3.0.7 + SudachiDict-derived normalization map。
 
-- **本番 URL**: `https://shirabe.dev`(2026-05-18 リリース予定)
+- **本番 URL**: `https://shirabe.dev`(本番稼働中・2026-05-18 リリース)
 - **OpenAPI 3.1**: [`/api/v1/text/openapi.yaml`](https://shirabe.dev/api/v1/text/openapi.yaml)(本家)/ [`/api/v1/text/openapi-gpts.yaml`](https://shirabe.dev/api/v1/text/openapi-gpts.yaml)(GPTs 短縮版)
-- **MCP / GPT Actions**: 5/18 リリース時に同梱
+- **GPT Actions**: OpenAPI 3.1 短縮版を GPT Builder Actions に Import
 - **License**: [MIT](./LICENSE)
 - **Documentation**: [`/docs/text-*`](https://shirabe.dev/docs/text-pricing)(5 endpoint + pricing、5/18 活性化)
 
@@ -37,7 +37,7 @@ Shirabe Text API は Lindera + IPAdic ベースで決定的な結果を返し、
 
 ## 設計の特徴(AI エージェント前提)
 
-### 1. REST + OpenAPI 3.1 / GPT Actions / MCP / LangChain 互換
+### 1. REST + OpenAPI 3.1 / GPT Actions / LangChain 互換
 
 1 URL で OpenAPI を公開、ChatGPT GPTs / Claude Tool Use / Gemini Function Calling / LangChain / Dify / LlamaIndex から自動 discover。1 タスクで 10〜50 リクエスト連鎖前提の rate limit 設計。
 

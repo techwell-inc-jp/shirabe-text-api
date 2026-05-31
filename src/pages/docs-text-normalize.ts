@@ -368,7 +368,7 @@ print(r.json()["normalized"])
     先行実装(<a href="https://github.com/techwell-inc-jp/shirabe-text-api/pull/4">PR #4</a>)。
   </p>
 
-  <h3>2026-05-18: 正式リリース予定</h3>
+  <h3>2026-05-18: 正式リリース</h3>
   <p>本番 routes 活性化、Free 枠で利用開始。1+ 年変更なし約束。</p>
 </section>
 

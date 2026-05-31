@@ -292,7 +292,7 @@ for t in r.json()["tokens"]:
     (<a href="https://github.com/techwell-inc-jp/shirabe-text-api/pull/2">PR #2</a>、scoping 5/19-5/25 比 +12 日先行)。
   </p>
 
-  <h3>2026-05-18: 正式リリース予定</h3>
+  <h3>2026-05-18: 正式リリース</h3>
   <p>本番 routes 活性化、Free 枠で利用開始。1+ 年変更なし約束。</p>
 </section>
 

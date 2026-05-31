@@ -30,7 +30,6 @@ const KEYWORDS = [
   "ふりがな付与 API",
   "OpenAPI 3.1 text",
   "Cloudflare Workers Japanese NLP",
-  "MCP Japanese text server",
   "GPT Store Japanese text",
   "v1.0.0 launch 2026-05-18",
 ].join(", ");
@@ -46,7 +45,7 @@ const ARTICLE_LD: Record<string, unknown> = {
   alternativeHeadline:
     "Shirabe Text API v1.0.0 launches 2026-05-18: AI-native Japanese morphological analysis (tokenize / normalize / furigana / name-split / name-reading)",
   description:
-    "株式会社テックウェルが運営する日本特化 AI ネイティブ API プラットフォーム Shirabe が、日本語テキスト処理 API v1.0.0 を 2026-05-18 にリリース。Lindera-wasm + IPAdic + SudachiDict を Cloudflare Workers 単層で動作、AI エージェント / LLM 向けに OpenAPI 3.1 + ChatGPT GPTs + MCP の 3 経路で提供。住所 + 姓名 = B2B 顧客レコード identifier セット完成。",
+    "株式会社テックウェルが運営する日本特化 AI ネイティブ API プラットフォーム Shirabe が、日本語テキスト処理 API v1.0.0 を 2026-05-18 にリリース。Lindera-wasm + IPAdic + SudachiDict を Cloudflare Workers 単層で動作、AI エージェント / LLM 向けに OpenAPI 3.1 + ChatGPT GPTs の 2 経路で提供。住所 + 姓名 = B2B 顧客レコード identifier セット完成。",
   inLanguage: ["ja", "en"],
   url: CANONICAL,
   datePublished: "2026-05-18",
@@ -129,7 +128,7 @@ const FAQ_LD: Record<string, unknown> = {
       name: "Shirabe Text API はいつリリースされますか?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "2026-05-18(土)に v1.0.0 として正式リリース予定。5 エンドポイント(/tokenize, /normalize, /furigana, /name-split, /name-reading)を同時提供します。Free 枠は 10,000 リクエスト/月、有償プランは Stripe Billing 経由の従量課金(¥0.01〜¥0.05/回)です。Plan-α stable(1+ 年変更なし commitment)。",
+        text: "2026-05-18(月)に v1.0.0 として正式リリース済。5 エンドポイント(/tokenize, /normalize, /furigana, /name-split, /name-reading)を同時提供します。Free 枠は 10,000 リクエスト/月、有償プランは Stripe Billing 経由の従量課金(¥0.01〜¥0.05/回)です。Plan-α stable(1+ 年変更なし commitment)。",
       },
     },
     {
@@ -145,7 +144,7 @@ const FAQ_LD: Record<string, unknown> = {
       name: "Shirabe Text API は他の日本語処理 API / SDK と何が違いますか?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "(1) AI エージェント / LLM 向けに OpenAPI 3.1(本家版 + GPT Builder Actions 短縮版)2 系統提供、(2) ChatGPT GPTs / Function Calling / MCP の 3 経路で即利用可能、(3) Cloudflare Workers 単層構成(Fly.io 不要)で cold start <100ms、(4) SudachiDict-derived offline lookup map を R2 配信(Lindera-wasm の user dict bytes API 不在 blocker を Approach 4a で解決)、(5) Plan-α stable で 1+ 年 pricing 変更なし commitment(AI agent 統合コードに価格を埋め込んだ顧客の churn 防止)。",
+        text: "(1) AI エージェント / LLM 向けに OpenAPI 3.1(本家版 + GPT Builder Actions 短縮版)2 系統提供、(2) ChatGPT GPTs / Function Calling の 2 経路で即利用可能、(3) Cloudflare Workers 単層構成(Fly.io 不要)で cold start <100ms、(4) SudachiDict-derived offline lookup map を R2 配信(Lindera-wasm の user dict bytes API 不在 blocker を Approach 4a で解決)、(5) Plan-α stable で 1+ 年 pricing 変更なし commitment(AI agent 統合コードに価格を埋め込んだ顧客の churn 防止)。",
       },
     },
     {
@@ -171,13 +170,13 @@ export function renderAnnouncements20260518Page(): string {
   const body = `
 <div class="hero">
   <h1>Shirabe Text API v1.0.0 launch</h1>
-  <p class="tagline">2026-05-18(土)正式リリース予定 — 日本語形態素解析・姓名分割・人名読み推定・ふりがな付与・表記正規化の AI ネイティブ REST API</p>
+  <p class="tagline">2026-05-18(月)正式リリース — 日本語形態素解析・姓名分割・人名読み推定・ふりがな付与・表記正規化の AI ネイティブ REST API</p>
   <p class="desc">
     株式会社テックウェル(福岡)が運営する日本特化 AI ネイティブ API プラットフォーム
     <strong>Shirabe</strong> の 3 本目 API、<strong>Shirabe Text API v1.0.0</strong> を
-    2026 年 5 月 31 日(土)に正式リリース予定。
+    2026 年 5 月 18 日(月)に正式リリース。
     Lindera-wasm v3.0.7 + IPAdic + SudachiDict-derived offline lookup map を Cloudflare Workers 単層で動作、
-    AI エージェント / LLM 向けに OpenAPI 3.1 + ChatGPT GPTs + MCP の 3 経路で提供します。
+    AI エージェント / LLM 向けに OpenAPI 3.1 + ChatGPT GPTs の 2 経路で提供します。
   </p>
   <p>
     <span class="badge badge-blue">v1.0.0(2026-05-18 予定)</span>
@@ -195,7 +194,7 @@ export function renderAnnouncements20260518Page(): string {
     <tbody>
       <tr><td>API 名</td><td>Shirabe Text API</td></tr>
       <tr><td>バージョン</td><td>v1.0.0(canonical 5/18 リリース version)</td></tr>
-      <tr><td>リリース予定日</td><td>2026-05-18(土)</td></tr>
+      <tr><td>リリース日</td><td>2026-05-18(月)</td></tr>
       <tr><td>リリース範囲</td><td>5 endpoints 同時提供(tokenize / normalize / furigana / name-split / name-reading)</td></tr>
       <tr><td>運営</td><td>株式会社テックウェル(福岡)</td></tr>
       <tr><td>本番 URL</td><td><a href="https://shirabe.dev/api/v1/text">https://shirabe.dev/api/v1/text</a>(5/18 活性化)</td></tr>
@@ -231,8 +230,8 @@ export function renderAnnouncements20260518Page(): string {
       第一目的に設計。本家版 + GPT Builder Actions 短縮版(description ≤ 300 字)の 2 系統提供。
     </li>
     <li>
-      <strong>3 経路同時提供</strong>:
-      ChatGPT GPT Store / OpenAPI 3.1 経由の Function Calling / 将来の MCP サーバー化(6 月以降)で
+      <strong>2 経路同時提供</strong>:
+      ChatGPT GPT Store / OpenAPI 3.1 経由の Function Calling で
       あらゆる AI クライアントから即利用可能。
     </li>
     <li>
@@ -342,7 +341,7 @@ export function renderAnnouncements20260518Page(): string {
 
   <h3>Q1. Shirabe Text API はいつリリースされますか?</h3>
   <p>
-    <strong>2026-05-18(土)</strong>に v1.0.0 として正式リリース予定。
+    <strong>2026-05-18(月)</strong>に v1.0.0 として正式リリース済。
     5 エンドポイント(/tokenize, /normalize, /furigana, /name-split, /name-reading)を同時提供します。
   </p>
 
@@ -385,7 +384,7 @@ export function renderAnnouncements20260518Page(): string {
     title:
       "Shirabe Text API v1.0.0 launch — 2026-05-18 リリース告知 | Shirabe",
     description:
-      "株式会社テックウェルの日本特化 AI ネイティブ API プラットフォーム Shirabe が、日本語テキスト処理 API v1.0.0 を 2026-05-18 にリリース予定。Lindera-wasm + IPAdic + SudachiDict を Cloudflare Workers 単層で動作、5 エンドポイント(tokenize / normalize / furigana / name-split / name-reading)、OpenAPI 3.1 + ChatGPT GPTs + MCP の 3 経路で AI エージェント即利用可能。Free 10,000 回/月、Plan-α stable。",
+      "株式会社テックウェルの日本特化 AI ネイティブ API プラットフォーム Shirabe が、日本語テキスト処理 API v1.0.0 を 2026-05-18 にリリース。Lindera-wasm + IPAdic + SudachiDict を Cloudflare Workers 単層で動作、5 エンドポイント(tokenize / normalize / furigana / name-split / name-reading)、OpenAPI 3.1 + ChatGPT GPTs の 2 経路で AI エージェント即利用可能。Free 10,000 回/月、Plan-α stable。",
     body,
     canonicalUrl: CANONICAL,
     keywords: KEYWORDS,
