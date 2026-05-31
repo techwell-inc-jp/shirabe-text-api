@@ -126,7 +126,7 @@ const FAQ_LD: Record<string, unknown> = {
       name: "リリース日と Free 枠の利用開始時期はいつですか?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "2026 年 5 月 31 日(土)正式リリース。Free 枠は同日から API キー不要で月 10,000 回まで利用可能(レート制限 1 req/s)。Starter 以上は同日から Stripe Checkout で契約開始できます。",
+        text: "2026 年 5 月 18 日(月)正式リリース。Free 枠は同日から API キー不要で月 10,000 回まで利用可能(レート制限 1 req/s)。Starter 以上は同日から Stripe Checkout で契約開始できます。",
       },
     },
   ],
@@ -307,7 +307,7 @@ export function renderTextPricingDocPage(): string {
     <li><strong>禁止する調整</strong>(既存顧客の billing 動線破壊): Free 枠縮小、単価値上げ、課金モデル変更</li>
   </ul>
 
-  <h3>2026-05-18: 正式リリース予定</h3>
+  <h3>2026-05-18: 正式リリース</h3>
   <p>
     全 5 エンドポイント(<code>/tokenize</code> / <code>/normalize</code> / <code>/furigana</code> / <code>/name-split</code> / <code>/name-reading</code>)同時リリース。
     Cloudflare Workers 単層構成、Lindera-wasm + IPAdic v3.0.7 + SudachiDict-derived normalization map。

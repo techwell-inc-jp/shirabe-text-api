@@ -222,7 +222,7 @@ print([t["surface"] for t in data["tokens"]])
   </p>
   <ul>
     <li><strong>GPT Builder</strong>: Actions タブの「Import URL」に GPTs 短縮版を貼る</li>
-    <li><strong>Claude Tool Use</strong>: OpenAPI から手動変換、または MCP server(計画中)経由</li>
+    <li><strong>Claude Tool Use</strong>: OpenAPI 3.1 から tools 配列を生成して Anthropic Messages API に渡す</li>
     <li><strong>LangChain</strong>: <code>OpenAPISpec.from_url</code> で取込</li>
   </ul>
 </section>
@@ -283,7 +283,7 @@ print([t["surface"] for t in data["tokens"]])
     の 5 エンドポイントが <strong>2026-05-18 同時リリース</strong>。
   </p>
 
-  <h3>2026-05-18: 正式リリース予定</h3>
+  <h3>2026-05-18: 正式リリース</h3>
   <p>
     本番 routes 活性化、Free 枠(月 10,000 回、API キー不要)で利用開始。
     1+ 年変更なし約束(Plan-α stable、上方調整のみ)。

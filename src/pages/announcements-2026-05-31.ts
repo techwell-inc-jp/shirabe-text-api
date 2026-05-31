@@ -32,7 +32,7 @@ const ARTICLE_LD: Record<string, unknown> = {
   alternativeHeadline:
     "Shirabe Text API release date change: moved up from 2026-05-31 to 2026-05-18",
   description:
-    "当初 2026-05-31 リリース予定だった Shirabe Text API v1.0.0 を、2026-05-18(月)に前倒しリリースします。リリース当日の正式告知は /announcements/2026-05-18 を参照してください。",
+    "当初 2026-05-31 リリース予定だった Shirabe Text API v1.0.0 を、2026-05-18(月)に前倒しリリースしました。リリース当日の正式告知は /announcements/2026-05-18 を参照してください。",
   inLanguage: ["ja", "en"],
   url: ORIGINAL_URL,
   datePublished: "2026-05-10",
@@ -62,13 +62,13 @@ export function renderAnnouncements20260531Page(): string {
   const body = `
 <div class="hero">
   <h1>リリース日変更のお知らせ — 2026-05-31 → 2026-05-18 前倒し</h1>
-  <p class="tagline">Shirabe Text API v1.0.0 のリリース日を 2026-05-31(土)から 2026-05-18(月)に前倒しします</p>
+  <p class="tagline">Shirabe Text API v1.0.0 のリリース日を 2026-05-31 から 2026-05-18(月)に前倒ししました</p>
 </div>
 
 <section class="section">
   <h2>新しいリリース日</h2>
   <p>
-    <strong>2026-05-18(月)</strong>に v1.0.0 として正式リリース予定です(当初予定 2026-05-31 から 13 日前倒し)。
+    <strong>2026-05-18(月)</strong>に v1.0.0 として正式リリースしました(当初予定 2026-05-31 から 13 日前倒し)。
     リリース当日の正式告知ページは
     <a href="${CANONICAL}"><strong>${CANONICAL}</strong></a>
     を参照してください。
