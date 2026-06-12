@@ -39,6 +39,12 @@ export type Env = {
   INTERNAL_STATS_USER?: string;
   /** Basic 認証パスワード(internal endpoints) */
   INTERNAL_STATS_PASS?: string;
+  /**
+   * enrich 内部 subrequest(案 X)識別トークン。calendar の enrich endpoint と共有する
+   * 共有シークレット。`X-Shirabe-Internal` がこの値と一致する subrequest は課金対象外
+   * (非計上)とする。未設定時は honor しない(fail-closed)。
+   */
+  INTERNAL_ENRICH_TOKEN?: string;
 };
 
 export type AppVariables = {
