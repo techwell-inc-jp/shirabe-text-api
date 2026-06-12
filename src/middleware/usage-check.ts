@@ -9,6 +9,7 @@
  */
 import type { Context, Next } from "hono";
 import type { AppEnv } from "../types/env.js";
+import { isInternalEnrichRequest } from "../util/internal-request.js";
 import {
   NEXT_PLAN_MAP,
   PLAN_MONTHLY_LIMITS,
@@ -35,6 +36,12 @@ function buildLimitMessage(plan: UsagePlanType, limit: number): string {
 }
 
 export async function usageCheckMiddleware(c: Context<AppEnv>, next: Next) {
+  // 案 X: 正規の内部 enrich subrequest は課金対象外。月間上限ゲートを通さない。
+  if (isInternalEnrichRequest(c)) {
+    await next();
+    return;
+  }
+
   const plan = c.get("plan") as UsagePlanType | undefined;
   const customerId = c.get("customerId") as string | undefined;
 

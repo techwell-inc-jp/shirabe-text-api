@@ -10,6 +10,7 @@
  */
 import type { Context, Next } from "hono";
 import type { AppEnv } from "../types/env.js";
+import { isInternalEnrichRequest } from "../util/internal-request.js";
 
 /** 日次利用量カウント:`usage:{customerId}:{YYYY-MM-DD}`(日次バッチで Stripe 報告)。 */
 function getUsageKey(customerId: string): string {
@@ -36,6 +37,12 @@ const DAILY_TTL_SEC = 7 * 24 * 60 * 60;
 const MONTHLY_TTL_SEC = 35 * 24 * 60 * 60;
 
 export async function usageLoggerMiddleware(c: Context<AppEnv>, next: Next) {
+  // 案 X: 正規の内部 enrich subrequest は非計上(KV カウントを送らない)。
+  if (isInternalEnrichRequest(c)) {
+    await next();
+    return;
+  }
+
   await next();
 
   if (c.res.status < 200 || c.res.status >= 400) return;
